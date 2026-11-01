@@ -12,7 +12,7 @@
 :root{
   --ink:#151c31; --panel:#1e2744; --panel-2:#253057; --line:#34416c;
   --sand:#f4ead5; --muted:#aab2cc;
-  --saffron:#f3aa3c; --teal:#35b9a6; --coral:#ea6a50; --plum:#9a8ff0;
+  --saffron:#f3aa3c; --teal:#35b9a6; --coral:#ea6a50; --plum:#9a8ff0; --rose:#e98bb4;
   --good:#5fd08a; --bad:#ef6b6b;
   --f-display:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
   --f-body:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
@@ -118,6 +118,30 @@ button:focus-visible,.toggle input:focus-visible+span{outline:3px solid var(--sa
 .toggle input{width:18px;height:18px;accent-color:var(--saffron)}
 .confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:14px}
 .note{color:var(--muted);font-size:14px;margin:0}
+
+.chip.team{background:var(--rose)}.cat[data-c="team"]{border-color:color-mix(in srgb,var(--rose) 55%,var(--line))}
+.names{display:flex;flex-wrap:wrap;gap:8px}
+.name-chip{font:inherit;font-size:18px;font-weight:700;padding:10px 18px;border-radius:999px;border:2px solid var(--line);background:var(--panel-2);color:var(--sand);cursor:pointer}
+.name-chip:hover:not(:disabled){border-color:var(--rose)}
+.name-chip.on{background:var(--rose);border-color:var(--rose);color:var(--ink)}
+.steal-box{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px;border:2px dashed var(--saffron);border-radius:12px}
+.steal-name{font-size:clamp(32px,5vw,48px);font-weight:700;color:var(--saffron)}
+.steal-tag{background:var(--saffron);color:var(--ink);border-radius:6px;padding:0 8px;font-size:.8em;margin-inline-end:4px}
+/* Presentation mode */
+body.present .wrap{max-width:none}
+body.present .sub, body.present .toggle, body.present #mute{display:none}
+body.present .grid{grid-template-columns:minmax(0,34%) minmax(0,1fr)}
+body.present .wheel-box{max-width:min(100%,62vh)}
+body.present .stage{min-height:70vh;padding:32px}
+body.present .qtext{font-size:clamp(28px,3.2vw,46px)}
+body.present .opt{font-size:clamp(20px,2vw,28px);padding:18px 20px}
+body.present .winner{font-size:clamp(56px,8vw,110px)}
+body.present .emoji-line{font-size:clamp(56px,8vw,110px)}
+body.present .answer, body.present .verdict{font-size:clamp(20px,1.8vw,26px)}
+body.present .why{font-size:clamp(18px,1.5vw,22px)}
+body.present .who{font-size:clamp(22px,2vw,30px)}
+body.present .score-list li{padding:4px 10px}
+@media (max-width:860px){body.present .grid{grid-template-columns:minmax(0,1fr)}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
 .pop{animation:pop .35s ease-out}
@@ -133,6 +157,7 @@ button:focus-visible,.toggle input:focus-visible+span{outline:3px solid var(--sa
     </div>
     <div class="toolbar">
       <label class="toggle"><input type="checkbox" id="exclude"><span>لا يتكرر الاسم حتى يأخذ الجميع دورهم</span></label>
+      <button class="btn primary small" id="present" type="button">وضع العرض</button>
       <button class="btn ghost small" id="mute" type="button">الصوت: يعمل</button>
     </div>
   </header>
@@ -168,6 +193,7 @@ const CATS={
   visual:{name:"ألغاز بصرية",hint:"شوف وفكّر"},
   culture:{name:"أسئلة ثقافية",hint:"أربعة خيارات، واحد صح"},
   country:{name:"أي بلاد؟",hint:"رموز تدل على بلد"},
+  team:{name:"مين فينا؟",hint:"اختر واحدًا من الفريق"},
   scenario:{name:"ماذا لو؟",hint:"موقف، وكيف بتتصرف"}
 };
 
@@ -237,6 +263,28 @@ const BANK={
   {q:"ما أسرع حيوان بري؟",o:["الفهد","الأسد","الحصان","الغزال"],a:0},
   {q:"ما الكوكب المعروف بالكوكب الأحمر؟",o:["المريخ","المشتري","الزهرة","عطارد"],a:0},
   {q:"ما اللغة الأم لأكبر عدد من الناس في العالم؟",o:["الصينية (الماندرين)","الإنجليزية","الإسبانية","الهندية"],a:0}
+ ],
+ team:[
+  {q:"مين فينا أول واحد يوصل الدوام؟"},
+  {q:"مين فينا أكثر واحد يشرب قهوة؟"},
+  {q:"مين فينا يرد على الرسائل أسرع من الكل؟"},
+  {q:"مين فينا عنده أكثر من ألف إيميل غير مقروء؟"},
+  {q:"مين فينا أكثر واحد يحب السفر؟"},
+  {q:"مين فينا لو فتح مطعم بينجح؟"},
+  {q:"مين فينا يقدر يقنع أي أحد بأي شيء؟"},
+  {q:"مين فينا أكثر واحد يضحّك الفريق؟"},
+  {q:"مين فينا عنده أكثر تبويبات مفتوحة في المتصفح؟"},
+  {q:"مين فينا بيصير مدير قبل الكل؟"},
+  {q:"مين فينا أهدأ واحد وقت الضغط؟"},
+  {q:"مين فينا أكثر واحد منظم في ملفاته؟"},
+  {q:"مين فينا لو ضاع في الصحراء بيرجع سالم؟"},
+  {q:"مين فينا ممكن يصير يوتيوبر مشهور؟"},
+  {q:"مين فينا أكثر واحد يتكلم في الاجتماعات؟"},
+  {q:"مين فينا لو ربح مليون بيستمر في الدوام؟"},
+  {q:"مين فينا أفضل واحد في الطبخ؟"},
+  {q:"مين فينا يتذكر أعياد ميلاد الكل؟"},
+  {q:"مين فينا أكثر واحد يحب التحديات؟"},
+  {q:"مين فينا بيكون بطل برنامج مسابقات؟"}
  ],
  scenario:[
   {q:"قبل عرضك أمام الإدارة بعشر دقائق، اكتشفت رقمًا خطأ في أهم شريحة. ماذا تفعل؟"},
@@ -341,7 +389,7 @@ function idle(msg){
   stage.innerHTML=`<div class="idle">
     <p class="big">${msg||"جاهزين؟"}</p>
     <p>اضغط «لُف» في وسط العجلة ليختار اسمًا من الفريق، ثم يختار صاحب الدور نوع السؤال.</p>
-    <p class="note">${BANK.visual.length} لغزًا بصريًا · ${BANK.country.length} بلدًا · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.scenario.length} موقفًا</p>
+    <p class="note">${BANK.visual.length} لغزًا بصريًا · ${BANK.country.length} بلدًا · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.team.length} سؤال «مين فينا» · ${BANK.scenario.length} موقفًا</p>
   </div>`;
 }
 function showWinner(who){
@@ -367,62 +415,103 @@ function pickQ(c){
   const i=free[Math.floor(Math.random()*free.length)];
   S.used[c].push(i);save();return BANK[c][i];
 }
-function head(c){return `<div class="qhead"><span class="chip ${c}">${CATS[c].name}</span><span class="who">السؤال لـ <b>${current.who}</b></span></div>`;}
-function award(){S.scores[current.who]=(S.scores[current.who]||0)+1;save();renderScores();}
+function head(c){return `<div class="qhead"><span class="chip ${c}">${CATS[c].name}</span><span class="who" id="who">السؤال لـ <b>${current.who}</b></span></div>`;}
+function setWho(name,stolen){current.ans=name;const w=$("#who");if(w)w.innerHTML=stolen?`<span class="steal-tag">سرقة!</span> الفرصة لـ <b>${name}</b>`:`السؤال لـ <b>${name}</b>`;}
+function award(){const n=current.ans||current.who;S.scores[n]=(S.scores[n]||0)+1;save();renderScores();return n;}
 function nextBtn(){return `<button class="btn primary" id="next" type="button">الدور التالي</button>`;}
 function bindNext(){const n=$("#next");if(n)n.onclick=()=>{clearInterval(timerId);idle("دور جديد؟");};}
 
+/* Steal: flash names, land on someone other than the owner */
+function stealPick(done){
+  const others=TEAM.filter(n=>n!==current.who), thief=others[Math.floor(Math.random()*others.length)];
+  const box=document.createElement("div");box.className="steal-box";box.innerHTML=`<span class="label">مين بيسرق السؤال؟</span><span class="steal-name" id="sname">…</span>`;
+  $("#res").replaceChildren(box);$("#act").innerHTML="";
+  let i=0;const steps=reduced()?1:14;
+  (function flip(){
+    const nm=i<steps-1?others[Math.floor(Math.random()*others.length)]:thief;
+    $("#sname").textContent=nm;tick(700+((i%3)*120),.04,.07);
+    if(++i<steps)setTimeout(flip,70+i*12);
+    else{$("#sname").classList.add("pop");fanfare();setTimeout(()=>{setWho(thief,true);done(thief);},700);}
+  })();
+}
+
+function runTimer(secs,onEnd){
+  clearInterval(timerId);
+  const tl=$("#tleft"),tb=$("#tbar"),tm=$("#timer");
+  if(!tl)return;tm.classList.remove("over");tl.textContent=secs;tb.style.transition="none";tb.style.width="100%";
+  void tb.offsetWidth;tb.style.transition="";
+  let left=secs;
+  timerId=setInterval(()=>{
+    left--;if(!$("#tleft")){clearInterval(timerId);return;}
+    tl.textContent=Math.max(0,left);tb.style.width=Math.max(0,left/secs*100)+"%";
+    if(left<=5&&left>0)tick(600,.05,.06);
+    if(left<=0){clearInterval(timerId);tm.classList.add("over");tick(300,.4,.12);onEnd&&onEnd();}
+  },1000);
+}
+function timerHTML(s){return `<div class="timer" id="timer"><span id="tleft">${s}</span><span>ثانية</span><div class="bar"><i id="tbar"></i></div></div>`;}
+
 function ask(c){
-  const q=pickQ(c);
+  const q=pickQ(c);current.ans=current.who;current.stolen=false;
   if(c==="culture"){
     const opts=shuffle(q.o.map((t,i)=>({t,ok:i===q.a})));
     const L=["أ","ب","ج","د"];
     stage.innerHTML=`${head(c)}<p class="qtext">${q.q}</p>
       <div class="opts">${opts.map((o,i)=>`<button class="opt" data-ok="${o.ok}" type="button"><span class="k">${L[i]}</span><span>${o.t}</span></button>`).join("")}</div>
       <div id="res"></div><div class="actions" id="act"></div>`;
+    const revealAll=()=>stage.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.ok==="true")x.classList.add("right");});
     stage.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
       const ok=b.dataset.ok==="true";
-      stage.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.ok==="true")x.classList.add("right");});
-      if(!ok)b.classList.add("wrong");
-      $("#res").innerHTML=ok?`<p class="verdict ok">إجابة صحيحة! +1 لـ ${current.who}</p>`:`<p class="verdict no">إجابة خاطئة. الصحيحة مظللة بالأخضر.</p>`;
-      if(ok){award();fanfare();}
-      $("#act").innerHTML=nextBtn();bindNext();
+      if(ok){revealAll();const n=award();fanfare();$("#res").innerHTML=`<p class="verdict ok">إجابة صحيحة! +1 لـ ${n}</p>`;$("#act").innerHTML=nextBtn();bindNext();return;}
+      b.classList.add("wrong");b.disabled=true;
+      if(!current.stolen){
+        stage.querySelectorAll(".opt").forEach(x=>x.disabled=true);
+        $("#res").innerHTML=`<p class="verdict no">إجابة خاطئة.</p>`;
+        $("#act").innerHTML=`<button class="btn primary" id="steal" type="button">اسرق السؤال</button><button class="btn ghost" id="show" type="button">أظهر الإجابة</button>`;
+        $("#steal").onclick=()=>{current.stolen=true;stealPick(()=>{
+          $("#res").innerHTML="";stage.querySelectorAll(".opt").forEach(x=>{if(!x.classList.contains("wrong"))x.disabled=false;});
+          $("#act").innerHTML=`<button class="btn ghost" id="show" type="button">أظهر الإجابة</button>`;
+          $("#show").onclick=()=>{revealAll();$("#act").innerHTML=nextBtn();bindNext();};
+        });};
+        $("#show").onclick=()=>{revealAll();$("#res").innerHTML=`<p class="verdict no">الإجابة الصحيحة مظللة بالأخضر.</p>`;$("#act").innerHTML=nextBtn();bindNext();};
+      } else {
+        revealAll();$("#res").innerHTML=`<p class="verdict no">حتى السرقة ما نجحت! الصحيحة مظللة بالأخضر.</p>`;$("#act").innerHTML=nextBtn();bindNext();
+      }
     });
   } else if(c==="visual"||c==="country"){
     stage.innerHTML=`${head(c)}<p class="qtext">${q.p}</p><div class="visual-box">${q.v}</div>
-      <div class="timer" id="timer"><span id="tleft">30</span><span>ثانية</span><div class="bar"><i id="tbar"></i></div></div>
-      <div id="res"></div>
-      <div class="actions" id="act"><button class="btn ghost" id="reveal" type="button">أظهر الحل الآن</button></div>`;
-    let vleft=30;
-    clearInterval(timerId);
-    timerId=setInterval(()=>{
-      vleft--; const tl=$("#tleft"),tb=$("#tbar"); if(!tl){clearInterval(timerId);return;}
-      tl.textContent=Math.max(0,vleft); tb.style.width=Math.max(0,vleft/30*100)+"%";
-      if(vleft<=5&&vleft>0) tick(600,.05,.06);
-      if(vleft<=0){clearInterval(timerId);$("#timer").classList.add("over");tick(300,.4,.12);showSol();}
-    },1000);
+      ${timerHTML(30)}<div id="res"></div><div class="actions" id="act"></div>`;
     const showSol=()=>{
-      clearInterval(timerId); if(!$("#reveal")) return;
+      clearInterval(timerId);
       $("#res").innerHTML=`<div class="answer"><b>الحل:</b> ${q.a}${q.w?`<div class="why"><b>ليش؟</b> ${q.w}</div>`:""}</div>`;
-      $("#act").innerHTML=`<button class="btn good" id="got" type="button">أجاب صح (+1)</button><button class="btn ghost" id="next" type="button">ما عرفها</button>`;
-      $("#got").onclick=()=>{award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${current.who}</p>`+nextBtn();bindNext();};
+      $("#act").innerHTML=`<button class="btn good" id="got" type="button">${current.ans} أجاب صح (+1)</button><button class="btn ghost" id="next" type="button">ما عرفها</button>`;
+      $("#got").onclick=()=>{const n=award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${n}</p>`+nextBtn();bindNext();};
       bindNext();
     };
-    $("#reveal").onclick=showSol;
+    const duringBtns=()=>{
+      $("#act").innerHTML=`<button class="btn ghost" id="reveal" type="button">أظهر الحل</button>${current.stolen?"":`<button class="btn primary" id="steal" type="button">خطأ، اسرق السؤال</button>`}`;
+      $("#reveal").onclick=showSol;
+      const s=$("#steal");if(s)s.onclick=()=>{clearInterval(timerId);current.stolen=true;stealPick(()=>{$("#res").innerHTML="";duringBtns();runTimer(15,showSol);});};
+    };
+    duringBtns();runTimer(30,showSol);
+  } else if(c==="team"){
+    stage.innerHTML=`${head(c)}<p class="qtext">${q.q}</p>
+      <p class="note">اختر اسمًا، وبعدها الفريق يقرر: موافقين؟</p>
+      <div class="names">${TEAM.map(n=>`<button class="name-chip" type="button" data-n="${n}">${n}</button>`).join("")}</div>
+      <div id="res"></div><div class="actions" id="act"></div>`;
+    stage.querySelectorAll(".name-chip").forEach(b=>b.onclick=()=>{
+      stage.querySelectorAll(".name-chip").forEach(x=>x.classList.toggle("on",x===b));
+      $("#res").innerHTML=`<p class="verdict">اختار <b style="color:var(--saffron)">${b.dataset.n}</b>. الفريق موافق؟</p>`;
+      $("#act").innerHTML=`<button class="btn good" id="agree" type="button">موافقين (+1)</button><button class="btn ghost" id="next" type="button">مو موافقين</button>`;
+      $("#agree").onclick=()=>{stage.querySelectorAll(".name-chip").forEach(x=>x.disabled=true);const n=award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${n}</p>`+nextBtn();bindNext();};
+      bindNext();
+    });
   } else {
     stage.innerHTML=`${head(c)}<p class="qtext">${q.q}</p>
-      <div class="timer" id="timer"><span id="tleft">60</span><span>ثانية</span><div class="bar"><i id="tbar"></i></div></div>
+      ${timerHTML(60)}
       <p class="note">لك دقيقة تشرح فيها تصرفك. بعدها يقرر الفريق: أقنعتنا؟</p>
       <div class="actions" id="act"><button class="btn good" id="conv" type="button">أقنعنا (+1)</button>${nextBtn()}</div>`;
-    let left=60;
-    clearInterval(timerId);
-    timerId=setInterval(()=>{
-      left--; const tl=$("#tleft"),tb=$("#tbar"); if(!tl){clearInterval(timerId);return;}
-      tl.textContent=Math.max(0,left); tb.style.width=Math.max(0,left/60*100)+"%";
-      if(left<=10&&left>0) tick(600,.05,.06);
-      if(left<=0){clearInterval(timerId);$("#timer").classList.add("over");tick(300,.4,.12);}
-    },1000);
-    $("#conv").onclick=()=>{clearInterval(timerId);award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${current.who}</p>`+nextBtn();bindNext();};
+    runTimer(60);
+    $("#conv").onclick=()=>{clearInterval(timerId);const n=award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${n}</p>`+nextBtn();bindNext();};
     bindNext();
   }
 }
@@ -452,6 +541,14 @@ const muteBtn=$("#mute");
 const setMute=()=>muteBtn.textContent=S.muted?"الصوت: مكتوم":"الصوت: يعمل";
 muteBtn.onclick=()=>{S.muted=!S.muted;save();setMute();};setMute();
 $("#newRound").onclick=()=>{S.remaining=[...TEAM];save();drawWheel();renderScores();idle("بدأت جولة جديدة");};
+const presBtn=$("#present");
+function setPresent(on){document.body.classList.toggle("present",on);presBtn.textContent=on?"خروج من وضع العرض":"وضع العرض";setTimeout(sizeCanvas,60);}
+presBtn.onclick=()=>{
+  const on=!document.body.classList.contains("present");setPresent(on);
+  try{if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+      else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}
+};
+document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("present"))setPresent(false);});
 spinBtn.onclick=spin;
 bindReset();
 document.documentElement.dir="rtl";document.documentElement.lang="ar";
