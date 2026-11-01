@@ -142,6 +142,28 @@ body.present .why{font-size:clamp(18px,1.5vw,22px)}
 body.present .who{font-size:clamp(22px,2vw,30px)}
 body.present .score-list li{padding:4px 10px}
 @media (max-width:860px){body.present .grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Race map */
+.map-card{display:flex;flex-direction:column;gap:12px}
+.map-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.map-head h2{margin:0;font-size:22px}
+.map-scroll{overflow-x:auto;padding-bottom:4px}
+.map{position:relative;min-width:640px;aspect-ratio:1000/400;width:100%}
+.map svg{position:absolute;inset:0;width:100%;height:100%}
+.stop-lbl{font-family:var(--f-body);font-size:15px;font-weight:500;fill:var(--muted)}
+.stop-num{font-family:var(--f-body);font-size:14px;font-weight:700;fill:var(--ink)}
+.token{position:absolute;width:40px;height:40px;margin:-20px 0 0 -20px;border-radius:50%;display:grid;place-items:center;
+  font-weight:700;font-size:12px;color:var(--ink);border:2px solid var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.45);
+  transition:left .9s cubic-bezier(.3,1.3,.5,1),top .9s cubic-bezier(.3,1.3,.5,1);z-index:2}
+.token.turn{z-index:3;outline:3px solid var(--sand);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:12px;height:12px;border-radius:50%;display:inline-block}
+.champ{display:flex;flex-direction:column;align-items:center;text-align:center;gap:14px;flex:1;justify-content:center}
+.champ .winner{font-size:clamp(44px,7vw,80px)}
+.rank{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;min-width:min(320px,100%)}
+.rank li{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;border-radius:8px;background:var(--panel-2);font-variant-numeric:tabular-nums}
+body.present .map{min-width:0}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
 .pop{animation:pop .35s ease-out}
@@ -171,7 +193,7 @@ body.present .score-list li{padding:4px 10px}
       </div>
       <div class="card">
         <div class="qhead">
-          <span class="label">النقاط</span>
+          <span class="label">المحطات</span>
           <div class="toolbar">
             <button class="btn ghost small" id="newRound" type="button">جولة جديدة</button>
             <span id="resetWrap"><button class="btn ghost small" id="resetScores" type="button">تصفير النقاط</button></span>
@@ -183,6 +205,15 @@ body.present .score-list li{padding:4px 10px}
 
     <section class="card stage" id="stage" aria-live="polite"></section>
   </div>
+
+  <section class="card map-card">
+    <div class="map-head">
+      <h2>السباق إلى قمة جبل شمس</h2>
+      <span class="note">كل إجابة صحيحة تقدّمك محطة. أول من يصل القمة يفوز.</span>
+    </div>
+    <div class="map-scroll"><div class="map" id="map"></div></div>
+    <div class="legend" id="legend"></div>
+  </section>
 </div>
 
 <script>
@@ -333,11 +364,12 @@ function drawWheel(){
     ctx.beginPath();ctx.moveTo(0,0);ctx.arc(0,0,R-8*d,a0,a0+seg);ctx.closePath();
     ctx.fillStyle=COLORS[ci];ctx.fill();
     ctx.strokeStyle="#151c31";ctx.lineWidth=2*d;ctx.stroke();
-    ctx.save();ctx.rotate(a0+seg/2);
-    ctx.fillStyle="#151c31";ctx.direction="rtl";ctx.textAlign="right";ctx.textBaseline="middle";
+    const mid=a0+seg/2, flip=Math.cos(mid)<0;
+    ctx.save();ctx.rotate(flip?mid+Math.PI:mid);
+    ctx.fillStyle="#151c31";ctx.direction="rtl";ctx.textAlign=flip?"left":"right";ctx.textBaseline="middle";
     const fs=Math.max(13,Math.min(24,(R/d)*0.11))*d;
     ctx.font=`700 ${fs}px "IBM Plex Sans Arabic", Tahoma, sans-serif`;
-    ctx.fillText(names[i],R-26*d,0);
+    ctx.fillText(names[i],flip?-(R-26*d):R-26*d,0);
     ctx.restore();
   }
   ctx.restore();
@@ -356,6 +388,7 @@ function fanfare(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,.18,.
 
 function spin(){
   if(spinning) return;
+  if(S.finished){showChampion();return;}
   clearInterval(timerId);
   const names=pool(), n=names.length, seg=2*Math.PI/n;
   const idx=Math.floor(Math.random()*n);
@@ -393,7 +426,7 @@ function idle(msg){
   </div>`;
 }
 function showWinner(who){
-  current={who};
+  current={who,ans:who};
   stage.innerHTML=`<div class="label">الدور على</div>
     <p class="winner pop">${who}</p>
     <div class="label">اختر نوع السؤال</div>
@@ -416,10 +449,10 @@ function pickQ(c){
   S.used[c].push(i);save();return BANK[c][i];
 }
 function head(c){return `<div class="qhead"><span class="chip ${c}">${CATS[c].name}</span><span class="who" id="who">السؤال لـ <b>${current.who}</b></span></div>`;}
-function setWho(name,stolen){current.ans=name;const w=$("#who");if(w)w.innerHTML=stolen?`<span class="steal-tag">سرقة!</span> الفرصة لـ <b>${name}</b>`:`السؤال لـ <b>${name}</b>`;}
-function award(){const n=current.ans||current.who;S.scores[n]=(S.scores[n]||0)+1;save();renderScores();return n;}
+function setWho(name,stolen){current.ans=name;renderTokens();const w=$("#who");if(w)w.innerHTML=stolen?`<span class="steal-tag">سرقة!</span> الفرصة لـ <b>${name}</b>`:`السؤال لـ <b>${name}</b>`;}
+function award(){const n=current.ans||current.who;S.scores[n]=Math.min(GOAL,(S.scores[n]||0)+1);if(S.scores[n]>=GOAL&&!S.finished){S.finished=n;setTimeout(showChampion,1600);}save();renderScores();return n;}
 function nextBtn(){return `<button class="btn primary" id="next" type="button">الدور التالي</button>`;}
-function bindNext(){const n=$("#next");if(n)n.onclick=()=>{clearInterval(timerId);idle("دور جديد؟");};}
+function bindNext(){const n=$("#next");if(n)n.onclick=()=>{clearInterval(timerId);current=null;renderTokens();idle("دور جديد؟");};}
 
 /* Steal: flash names, land on someone other than the owner */
 function stealPick(done){
@@ -516,19 +549,85 @@ function ask(c){
   }
 }
 
+
+/* ---------- Race map ---------- */
+const STOPS=["مسقط","بركاء","نخل","الرستاق","العوابي","وادي بني عوف","بلد سيت","الحمراء","مسفاة العبريين","خطم الشكلة","قمة جبل شمس"];
+const GOAL=STOPS.length-1;
+const TOKEN_COLORS=["#f3aa3c","#35b9a6","#ea6a50","#9a8ff0","#e98bb4","#7cc4f0","#c9d66a","#f08a4b","#b9a6ff"];
+const PTS=STOPS.map((_,i)=>({x:930-i*86,y:300-i*18+60*Math.sin(i*1.1)}));
+function pathD(P){
+  let d=`M${P[0].x},${P[0].y}`;
+  for(let i=0;i<P.length-1;i++){
+    const p0=P[i-1]||P[i],p1=P[i],p2=P[i+1],p3=P[i+2]||p2;
+    const c1={x:p1.x+(p2.x-p0.x)/6,y:p1.y+(p2.y-p0.y)/6},c2={x:p2.x-(p3.x-p1.x)/6,y:p2.y-(p3.y-p1.y)/6};
+    d+=` C${c1.x.toFixed(1)},${c1.y.toFixed(1)} ${c2.x.toFixed(1)},${c2.y.toFixed(1)} ${p2.x.toFixed(1)},${p2.y.toFixed(1)}`;
+  }
+  return d;
+}
+function buildMap(){
+  const d=pathD(PTS);
+  const stops=PTS.map((p,i)=>{
+    const last=i===GOAL,first=i===0;
+    const r=last||first?17:13, fill=last?"var(--saffron)":first?"var(--teal)":"var(--sand)";
+    const below=(i%2===0)?1:-1, ly=p.y+below*(r+20)+ (below>0?6:0);
+    return `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="var(--ink)" stroke-width="3"/>
+      <text class="stop-num" x="${p.x}" y="${p.y+5}" text-anchor="middle">${first?"":last?"":i}</text>
+      <text class="stop-lbl" x="${p.x}" y="${ly}" text-anchor="middle" ${last?'style="fill:var(--saffron);font-weight:700"':''}>${STOPS[i]}</text>`;
+  }).join("");
+  const f=PTS[GOAL];
+  $("#map").innerHTML=`<svg viewBox="0 0 1000 400" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <polygon points="0,400 0,120 70,40 130,95 190,30 260,110 330,70 400,160 470,400" fill="var(--panel-2)" opacity=".7"/>
+    <polygon points="130,95 190,30 225,70 205,75 190,58 160,90" fill="var(--sand)" opacity=".18"/>
+    <path d="${d}" fill="none" stroke="var(--line)" stroke-width="26" stroke-linecap="round"/>
+    <path d="${d}" fill="none" stroke="var(--sand)" stroke-width="3" stroke-dasharray="10 12" stroke-linecap="round" opacity=".55"/>
+    ${stops}
+    <line x1="${f.x}" y1="${f.y-16}" x2="${f.x}" y2="${f.y-50}" stroke="var(--sand)" stroke-width="3"/>
+    <polygon points="${f.x},${f.y-50} ${f.x-28},${f.y-41} ${f.x},${f.y-32}" fill="var(--coral)"/>
+  </svg>`;
+  $("#legend").innerHTML=TEAM.map((n,i)=>`<span><i style="background:${TOKEN_COLORS[i]}"></i>${n}</span>`).join("");
+  TEAM.forEach((n,i)=>{const t=document.createElement("div");t.className="token";t.id="tok"+i;t.style.background=TOKEN_COLORS[i];t.textContent=n.replace(/^ال/,"").slice(0,3);t.title=n;$("#map").appendChild(t);});
+}
+function renderTokens(){
+  const groups={};
+  TEAM.forEach((n,i)=>{const st=Math.min(GOAL,S.scores[n]||0);(groups[st]=groups[st]||[]).push(i);});
+  Object.entries(groups).forEach(([st,arr])=>{
+    const p=PTS[st];
+    arr.forEach((i,k)=>{
+      const m=arr.length, cols=Math.min(3,m), rows=Math.ceil(m/cols), G=42;
+      const dir=(st%2===0)?-1:1, off=m>1?dir*((rows-1)/2*G+38):0;
+      const x=p.x+((k%cols)-(cols-1)/2)*G, y=p.y+(Math.floor(k/cols)-(rows-1)/2)*G+off;
+      const t=$("#tok"+i);t.style.left=(x/10)+"%";t.style.top=(y/4)+"%";
+      t.classList.toggle("turn",!!current&&(current.ans||current.who)===TEAM[i]);
+    });
+  });
+}
+function showChampion(){
+  clearInterval(timerId);
+  const rank=[...TEAM].sort((a,b)=>S.scores[b]-S.scores[a]);
+  stage.innerHTML=`<div class="champ">
+    <div class="label">وصل إلى قمة جبل شمس أولًا</div>
+    <p class="winner pop">${S.finished}</p>
+    <ol class="rank">${rank.map((n,i)=>`<li><span>${i+1}. ${n}</span><span>${STOPS[Math.min(GOAL,S.scores[n])]}</span></li>`).join("")}</ol>
+    <div class="actions" style="margin-top:0"><button class="btn primary" id="newRace" type="button">سباق جديد</button></div>
+  </div>`;
+  $("#newRace").onclick=()=>{TEAM.forEach(n=>S.scores[n]=0);S.finished=null;S.remaining=[...TEAM];save();renderScores();drawWheel();idle("بدأ سباق جديد");};
+  [0,350,700].forEach(d=>setTimeout(fanfare,d));
+}
+
 /* ---------- Scoreboard ---------- */
 function renderScores(){
   const max=Math.max(...TEAM.map(n=>S.scores[n]));
   const list=[...TEAM].sort((a,b)=>S.scores[b]-S.scores[a]);
   $("#scores").innerHTML=list.map(n=>{
     const done=S.exclude&&!S.remaining.includes(n);
-    return `<li class="${done?"done":""} ${max>0&&S.scores[n]===max?"lead":""}"><span class="nm">${n}</span><span class="tag">${done?"أخذ دوره":""}</span><span class="pts">${S.scores[n]}</span></li>`;
+    return `<li class="${done?"done":""} ${max>0&&S.scores[n]===max?"lead":""}"><span class="nm">${n}</span><span class="tag">${done?"أخذ دوره":""}</span><span class="pts">${S.scores[n]}/${GOAL}</span></li>`;
   }).join("");
+  if($("#tok0"))renderTokens();
 }
 function bindReset(){
   $("#resetScores").onclick=()=>{
     $("#resetWrap").innerHTML=`<span class="confirm">متأكد؟ <button class="btn ghost small" id="yes" type="button">نعم، صفّر</button><button class="btn ghost small" id="no" type="button">إلغاء</button></span>`;
-    $("#yes").onclick=()=>{TEAM.forEach(n=>S.scores[n]=0);save();renderScores();restoreReset();};
+    $("#yes").onclick=()=>{TEAM.forEach(n=>S.scores[n]=0);S.finished=null;save();renderScores();restoreReset();};
     $("#no").onclick=restoreReset;
   };
 }
@@ -553,7 +652,7 @@ spinBtn.onclick=spin;
 bindReset();
 document.documentElement.dir="rtl";document.documentElement.lang="ar";
 window.addEventListener("resize",sizeCanvas);
-renderScores();idle();sizeCanvas();
+buildMap();renderScores();if(S.finished)showChampion();else idle();sizeCanvas();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawWheel);
 </script>
 
