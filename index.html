@@ -616,7 +616,9 @@ function showWinner(who){
     if(busy){if(boost)boost();return;}
     if(spinning)return;busy=true;catSpinning=true;$("#skip").disabled=true;
     const keys=Object.keys(CATS), n=keys.length, seg=2*Math.PI/n, TAU=2*Math.PI;
-    const idx=Math.floor(Math.random()*n), jit=(Math.random()-.5)*seg*.7;
+    /* never land on the same category as the previous turn */
+    const choices=keys.map((_,i)=>i).filter(i=>keys[i]!==S.lastCat);
+    const idx=choices[Math.floor(Math.random()*choices.length)], jit=(Math.random()-.5)*seg*.7;
     let target=-Math.PI/2-(idx+.5)*seg+jit; while(target<catRot+TAU*4) target+=TAU;
     let start=catRot, dist=target-start, dur=reduced()?500:3400, t0=performance.now();
     let last=-1;
@@ -627,7 +629,7 @@ function showWinner(who){
       catRot=start+dist*e;drawCatWheel(cv);
       const sgi=Math.floor(((-Math.PI/2-catRot)%TAU+TAU)%TAU/seg); if(sgi!==last){last=sgi;tick(1100,.025,.06);}
       if(t<1)return requestAnimationFrame(frame);
-      catRot%=TAU;catSpinning=false;boost=null;$("#catSpin").disabled=true;cv.onclick=null;const c=keys[idx];
+      catRot%=TAU;catSpinning=false;boost=null;$("#catSpin").disabled=true;cv.onclick=null;const c=keys[idx];S.lastCat=c;save();
       $("#catMsg").innerHTML=`القسم: <b style="color:${CAT_COLORS[c]}">${CATS[c].name}</b>`;fanfare();
       setTimeout(()=>{if(current&&current.who===who)ask(c);},1100);
     })(t0);
