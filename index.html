@@ -531,6 +531,9 @@ function spin(){
   if(!pool().length){idle("ما فيه أحد حاضر");return;}
   clearInterval(timerId);
   const names=pool(); wheelNames=names; const n=names.length, seg=2*Math.PI/n;
+  if(n===1){ /* only one name left: no need to spin */
+    const who=names[0];S.remaining=S.remaining.filter(x=>x!==who);save();fanfare();showWinner(who);spinBtn.disabled=true;return;
+  }
   const idx=Math.floor(Math.random()*n);
   const jitter=(Math.random()-.5)*seg*.7;
   let target=-Math.PI/2-(idx+.5)*seg+jitter;
