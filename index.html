@@ -359,7 +359,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const stage=$("#stage"), canvas=$("#wheel"), ctx=canvas.getContext("2d"), spinBtn=$("#spin");
-let rot=0, spinning=false, current=null, timerId=null;
+let rot=0, spinning=false, current=null, timerId=null, wheelNames=null;
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
 const PER=2;
@@ -374,7 +374,7 @@ function pool(){ const act=active(); if(!S.exclude) return act; let r=act.filter
 /* ---------- Wheel ---------- */
 function sizeCanvas(){const d=window.devicePixelRatio||1,w=canvas.clientWidth;canvas.width=w*d;canvas.height=w*d;drawWheel();}
 function drawWheel(){
-  const names=pool(), n=names.length, W=canvas.width, R=W/2, seg=2*Math.PI/n, d=window.devicePixelRatio||1;
+  const names=wheelNames||pool(), n=names.length, W=canvas.width, R=W/2, seg=2*Math.PI/n, d=window.devicePixelRatio||1;
   if(W<40)return;
   ctx.clearRect(0,0,W,W);
   if(!n){ctx.beginPath();ctx.arc(R,R,R-2*d,0,2*Math.PI);ctx.fillStyle="#253057";ctx.fill();return;}
@@ -412,7 +412,7 @@ function spin(){
   if(spinning) return;
   if(!pool().length){showChampion();return;}
   clearInterval(timerId);
-  const names=pool(), n=names.length, seg=2*Math.PI/n;
+  const names=pool(); wheelNames=names; const n=names.length, seg=2*Math.PI/n;
   const idx=Math.floor(Math.random()*n);
   const jitter=(Math.random()-.5)*seg*.7;
   let target=-Math.PI/2-(idx+.5)*seg+jitter;
@@ -624,7 +624,7 @@ function renderTokens(){
     });
   });
 }
-function resetGame(){TEAM.forEach(n=>S.scores[n]=0);S.done={};S.remaining=[...TEAM];save();renderScores();drawWheel();idle("بدأت لعبة جديدة");}
+function resetGame(){wheelNames=null;current=null;TEAM.forEach(n=>S.scores[n]=0);S.done={};S.remaining=[...TEAM];save();renderScores();drawWheel();idle("بدأت لعبة جديدة");}
 function showChampion(){
   clearInterval(timerId);
   const ppl=TEAM.filter(n=>!S.absent.includes(n)||answered(n)>0);
@@ -654,7 +654,7 @@ function renderScores(){
   document.querySelectorAll(".att").forEach(b=>b.onclick=()=>{
     const n=b.dataset.n;
     S.absent=S.absent.includes(n)?S.absent.filter(x=>x!==n):[...S.absent,n];
-    save();renderScores();if(!spinning)drawWheel();
+    if(!spinning&&!current)wheelNames=null;save();renderScores();if(!spinning)drawWheel();
   });
   if($("#tok0"))renderTokens();
 }
@@ -669,11 +669,11 @@ function restoreReset(){$("#resetWrap").innerHTML=`<button class="btn ghost smal
 
 /* ---------- Init ---------- */
 $("#exclude").checked=S.exclude;
-$("#exclude").onchange=e=>{S.exclude=e.target.checked;if(S.exclude&&!S.remaining.length)S.remaining=[...TEAM];save();drawWheel();renderScores();};
+$("#exclude").onchange=e=>{S.exclude=e.target.checked;if(!spinning&&!current)wheelNames=null;if(S.exclude&&!S.remaining.length)S.remaining=[...TEAM];save();drawWheel();renderScores();};
 const muteBtn=$("#mute");
 const setMute=()=>muteBtn.textContent=S.muted?"الصوت: مكتوم":"الصوت: يعمل";
 muteBtn.onclick=()=>{S.muted=!S.muted;save();setMute();};setMute();
-$("#newRound").onclick=()=>{S.remaining=[...TEAM];save();drawWheel();renderScores();idle("بدأت جولة جديدة");};
+$("#newRound").onclick=()=>{S.remaining=[...TEAM];wheelNames=null;current=null;save();drawWheel();renderScores();idle("بدأت جولة جديدة");};
 const presBtn=$("#present");
 function setPresent(on){document.body.classList.toggle("present",on);presBtn.textContent=on?"خروج من وضع العرض":"وضع العرض";setTimeout(sizeCanvas,60);}
 presBtn.onclick=()=>{
