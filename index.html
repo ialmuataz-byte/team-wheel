@@ -766,11 +766,19 @@ function ask(c){
 
 
 /* ---------- Race map ---------- */
-const STOPS=["مسقط","بركاء","نخل","الرستاق","العوابي","وادي بني عوف","بلد سيت","الحمراء","مسفاة العبريين","وادي غول","قمة جبل شمس"];
+const STOPS=["مسقط","بركاء","الرستاق","بلد سيت","الحمراء","وادي غول","قمة جبل شمس"];
 const GOAL=STOPS.length-1;
 const TOKEN_COLORS=["#f3aa3c","#35b9a6","#ea6a50","#9a8ff0","#e98bb4","#7cc4f0","#c9d66a","#f08a4b","#b9a6ff"];
 const tokColor=i=>TOKEN_COLORS[i]||`hsl(${(i*47)%360} 70% 66%)`;
-const PTS=STOPS.map((_,i)=>({x:930-i*86,y:300-i*18+60*Math.sin(i*1.1)}));
+TEAM.forEach(n=>{if((S.scores[n]||0)>GOAL)S.scores[n]=GOAL;});
+/* The road keeps its original winding shape; stops are spaced evenly along it */
+const SHAPE=Array.from({length:11},(_,i)=>({x:930-i*86,y:300-i*18+60*Math.sin(i*1.1)}));
+let PTS=STOPS.map((_,i)=>SHAPE[Math.round(i*10/GOAL)]);
+function placeStops(d){
+  try{const NS="http://www.w3.org/2000/svg",sv=document.createElementNS(NS,"svg"),pa=document.createElementNS(NS,"path");
+    sv.setAttribute("style","position:absolute;width:0;height:0;visibility:hidden");pa.setAttribute("d",d);sv.appendChild(pa);document.body.appendChild(sv);
+    const L=pa.getTotalLength();PTS=STOPS.map((_,i)=>{const q=pa.getPointAtLength(L*i/GOAL);return {x:q.x,y:q.y};});sv.remove();}catch(e){}
+}
 function pathD(P){
   let d=`M${P[0].x},${P[0].y}`;
   for(let i=0;i<P.length-1;i++){
@@ -781,7 +789,7 @@ function pathD(P){
   return d;
 }
 function buildMap(){
-  const d=pathD(PTS);
+  const d=pathD(SHAPE);placeStops(d);
   const stops=PTS.map((p,i)=>{
     const last=i===GOAL,first=i===0;
     const r=last||first?17:13, fill=last?"var(--saffron)":first?"var(--teal)":"var(--sand)";
