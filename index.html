@@ -85,6 +85,7 @@ h1 span{color:var(--saffron)}
 .letters span{width:58px;height:58px;display:grid;place-items:center;border-radius:10px;background:var(--panel-2);border:2px solid var(--teal);font-size:30px;font-weight:700}
 .visual-box svg{max-width:100%;height:auto;color:var(--sand)}
 
+.visual-box+.timer,.timer+.opts{margin-top:0}
 .opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 @media (max-width:520px){.opts{grid-template-columns:minmax(0,1fr)}}
 .opt{font:inherit;font-size:18px;text-align:right;padding:14px 16px;border-radius:10px;border:2px solid var(--line);background:var(--panel-2);color:var(--sand);cursor:pointer;display:flex;gap:10px;align-items:center}
@@ -393,6 +394,7 @@ const FW=300,FH=200;
 const fsvg=inner=>`<svg class="flag" width="${FW}" height="${FH}" viewBox="0 0 ${FW} ${FH}" role="img" aria-label="علم">${inner}<rect x=".5" y=".5" width="${FW-1}" height="${FH-1}" fill="none" stroke="rgba(0,0,0,.25)"/></svg>`;
 const hS=(cols,ratios)=>{ratios=ratios||cols.map(()=>1);const t=ratios.reduce((a,b)=>a+b,0);let y=0;return cols.map((c,i)=>{const h=FH*ratios[i]/t;const r=`<rect x="0" y="${y}" width="${FW}" height="${h+0.5}" fill="${c}"/>`;y+=h;return r;}).join("");};
 const vS=cols=>cols.map((c,i)=>`<rect x="${i*FW/cols.length}" y="0" width="${FW/cols.length+0.5}" height="${FH}" fill="${c}"/>`).join("");
+const FLAG_OPTS={"ساحل العاج": ["أيرلندا", "النيجر", "إيطاليا"], "مالي": ["غينيا", "السنغال", "الكاميرون"], "اليمن": ["مصر", "سوريا", "العراق"], "السودان": ["فلسطين", "الأردن", "الإمارات"], "الكويت": ["الإمارات", "فلسطين", "الأردن"], "البحرين": ["قطر", "تونس", "المالديف"], "بالاو": ["بنغلاديش", "اليابان", "ميكرونيزيا"], "نيجيريا": ["النيجر", "زامبيا", "ساحل العاج"], "لاتفيا": ["النمسا", "لبنان", "بيرو"], "إستونيا": ["فنلندا", "ليتوانيا", "بوتسوانا"], "ليتوانيا": ["بوليفيا", "غانا", "إثيوبيا"], "الغابون": ["رواندا", "سيراليون", "ليتوانيا"], "سيراليون": ["الغابون", "تنزانيا", "غامبيا"], "بنين": ["مدغشقر", "غينيا بيساو", "الكاميرون"], "مدغشقر": ["بنين", "بيلاروسيا", "الإمارات"], "موريشيوس": ["سيشل", "الغابون", "كولومبيا"], "سيشل": ["موريشيوس", "جزر القمر", "تنزانيا"], "بوليفيا": ["غانا", "ليتوانيا", "الكاميرون"], "التشيك": ["سلوفاكيا", "بولندا", "الفلبين"]};
 const FLAGS=[
  ["ساحل العاج",vS(["#f77f00","#ffffff","#009e60"]),"برتقالي ثم أبيض ثم أخضر بشكل عمودي. يشبه علم أيرلندا، لكن الألوان فيه معكوسة: أيرلندا يبدأ بالأخضر."],
  ["مالي",vS(["#14b53a","#fcd116","#ce1126"]),"أخضر ثم أصفر ثم أحمر عموديًا. علم غينيا نفس الألوان لكن بالترتيب المعكوس: أحمر ثم أصفر ثم أخضر."],
@@ -415,7 +417,7 @@ const FLAGS=[
  ["التشيك",hS(["#ffffff","#d7141a"])+`<polygon points="0,0 150,100 0,200" fill="#11457e"/>`,"أبيض فوق أحمر مع مثلث أزرق عند السارية. علم بولندا أبيض فوق أحمر بدون المثلث."],
 ];
 
-BANK.country.push(...FLAGS.map(([a,svg,w])=>({p:"أي دولة هذا علمها؟",v:fsvg(svg),a,w})));
+BANK.country.push(...FLAGS.map(([a,svg,w])=>({q:"أي دولة هذا علمها؟",v:fsvg(svg),o:[a,...FLAG_OPTS[a]],a:0,w})));
 /* ---------- State ---------- */
 const KEY="team-wheel-v1";
 let S={scores:{},used:{},remaining:[...TEAM],exclude:true,muted:false,done:{},absent:[]};
@@ -640,31 +642,36 @@ function timerHTML(s){return `<div class="timer" id="timer"><span id="tleft">${s
 function ask(c){
   const q=pickQ(c);current.ans=current.who;current.stolen=false;
   S.done[current.who]=S.done[current.who]||{};S.done[current.who][c]=(S.done[current.who][c]||0)+1;save();renderScores();
-  if(c==="culture"||c==="interview"){
+  if(c==="culture"||c==="interview"||Array.isArray(q.o)){
     const opts=shuffle(q.o.map((t,i)=>({t,ok:i===q.a})));
-    const L=["أ","ب","ج","د"];
-    stage.innerHTML=`${head(c)}<p class="qtext">${q.q}</p>
+    const L=["أ","ب","ج","د"], timed=!!q.v;
+    stage.innerHTML=`${head(c)}<p class="qtext">${q.q||q.p}</p>
+      ${q.v?`<div class="visual-box">${q.v}</div>`:""}${timed?timerHTML(30):""}
       <div class="opts">${opts.map((o,i)=>`<button class="opt" data-ok="${o.ok}" type="button"><span class="k">${L[i]}</span><span>${o.t}</span></button>`).join("")}</div>
       <div id="res"></div><div class="actions" id="act"></div>`;
-    const revealAll=()=>stage.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.ok==="true")x.classList.add("right");});
-    stage.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
-      const ok=b.dataset.ok==="true";
-      if(ok){revealAll();const n=award();fanfare();$("#res").innerHTML=`<p class="verdict ok">إجابة صحيحة! +1 لـ ${n}</p>`;$("#act").innerHTML=nextBtn();bindNext();return;}
-      b.classList.add("wrong");b.disabled=true;
+    const why=()=>q.w?`<div class="answer" style="margin-top:10px"><b>ليش؟</b> ${q.w}</div>`:"";
+    const revealAll=()=>{clearInterval(timerId);stage.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.ok==="true")x.classList.add("right");});};
+    const finish=html=>{revealAll();$("#res").innerHTML=html+why();$("#act").innerHTML=nextBtn();bindNext();};
+    const wrong=(msg)=>{
+      clearInterval(timerId);
       if(!current.stolen){
         stage.querySelectorAll(".opt").forEach(x=>x.disabled=true);
-        $("#res").innerHTML=`<p class="verdict no">إجابة خاطئة.</p>`;
+        $("#res").innerHTML=`<p class="verdict no">${msg}</p>`;
         $("#act").innerHTML=`<button class="btn primary" id="steal" type="button">اسرق السؤال</button><button class="btn ghost" id="show" type="button">أظهر الإجابة</button>`;
         $("#steal").onclick=()=>{current.stolen=true;stealPick(()=>{
           $("#res").innerHTML="";stage.querySelectorAll(".opt").forEach(x=>{if(!x.classList.contains("wrong"))x.disabled=false;});
           $("#act").innerHTML=`<button class="btn ghost" id="show" type="button">أظهر الإجابة</button>`;
-          $("#show").onclick=()=>{revealAll();$("#act").innerHTML=nextBtn();bindNext();};
+          $("#show").onclick=()=>finish(`<p class="verdict no">الإجابة الصحيحة مظللة بالأخضر.</p>`);
+          if(timed)runTimer(15,()=>finish(`<p class="verdict no">انتهى الوقت! الإجابة الصحيحة مظللة بالأخضر.</p>`));
         });};
-        $("#show").onclick=()=>{revealAll();$("#res").innerHTML=`<p class="verdict no">الإجابة الصحيحة مظللة بالأخضر.</p>`;$("#act").innerHTML=nextBtn();bindNext();};
-      } else {
-        revealAll();$("#res").innerHTML=`<p class="verdict no">حتى السرقة ما نجحت! الصحيحة مظللة بالأخضر.</p>`;$("#act").innerHTML=nextBtn();bindNext();
-      }
+        $("#show").onclick=()=>finish(`<p class="verdict no">الإجابة الصحيحة مظللة بالأخضر.</p>`);
+      } else finish(`<p class="verdict no">حتى السرقة ما نجحت! الصحيحة مظللة بالأخضر.</p>`);
+    };
+    stage.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{
+      if(b.dataset.ok==="true"){const n=award();fanfare();finish(`<p class="verdict ok">إجابة صحيحة! +1 لـ ${n}</p>`);return;}
+      b.classList.add("wrong");b.disabled=true;wrong("إجابة خاطئة.");
     });
+    if(timed)runTimer(30,()=>wrong("انتهى الوقت!"));
   } else if(c==="country"){
     stage.innerHTML=`${head(c)}<p class="qtext">${q.p}</p><div class="visual-box">${q.v}</div>
       ${timerHTML(30)}<div id="res"></div><div class="actions" id="act"></div>`;
