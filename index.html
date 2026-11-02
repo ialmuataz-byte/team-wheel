@@ -431,7 +431,7 @@ function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
 const $=s=>document.querySelector(s);
 const stage=$("#stage"), canvas=$("#wheel"), ctx=canvas.getContext("2d"), spinBtn=$("#spin");
-let rot=0, spinning=false, current=null, timerId=null, wheelNames=null;
+let catSpinning=false, rot=0, spinning=false, current=null, timerId=null, wheelNames=null;
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
 const answered=n=>Object.keys(CATS).reduce((t,c)=>t+((S.done[n]||{})[c]||0),0);
@@ -486,7 +486,7 @@ function tick(f=900,dur=.03,vol=.08){
 function fanfare(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,.18,.12),i*110));}
 
 function spin(){
-  if(spinning) return;
+  if(spinning||catSpinning) return;
   if(S.winner){showChampion();return;}
   if(S.final&&!finalLeft().length){finishGame();return;}
   if(!pool().length){idle("ما فيه أحد حاضر");return;}
@@ -511,7 +511,7 @@ function spin(){
       rot=rot%TAU;spinning=false;spinBtn.disabled=false;
       const who=names[idx];
       S.remaining=S.remaining.filter(x=>x!==who);
-      save();fanfare();showWinner(who);
+      save();fanfare();showWinner(who);spinBtn.disabled=true;
     }
   })(t0);
 }
@@ -520,6 +520,7 @@ const reduced=()=>window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 /* ---------- Stage views ---------- */
 function remainingCount(c){return BANK[c].length-S.used[c].length;}
 function idle(msg){
+  if(!spinning)spinBtn.disabled=false;
   stage.innerHTML=`<div class="idle">
     <p class="big">${msg||"جاهزين؟"}</p>
     ${S.final?`<div class="summit-note">على قمة جبل شمس: <b>${atSummit().join(" و")}</b>. الجولة الأخيرة مستمرة.<br>باقي دور: ${finalLeft().join("، ")||"لا أحد"}</div>`:""}
@@ -567,7 +568,7 @@ function showWinner(who){
   cv.width=cv.clientWidth*dpr;cv.height=cv.clientWidth*dpr;drawCatWheel(cv);
   let busy=false;
   const go=()=>{
-    if(busy)return;busy=true;$("#catSpin").disabled=true;$("#skip").disabled=true;
+    if(busy||spinning)return;busy=true;catSpinning=true;$("#catSpin").disabled=true;$("#skip").disabled=true;
     const keys=Object.keys(CATS), n=keys.length, seg=2*Math.PI/n, TAU=2*Math.PI;
     const idx=Math.floor(Math.random()*n), jit=(Math.random()-.5)*seg*.7;
     let target=-Math.PI/2-(idx+.5)*seg+jit; while(target<catRot+TAU*4) target+=TAU;
@@ -579,7 +580,7 @@ function showWinner(who){
       catRot=start+dist*e;drawCatWheel(cv);
       const sgi=Math.floor(((-Math.PI/2-catRot)%TAU+TAU)%TAU/seg); if(sgi!==last){last=sgi;tick(1100,.025,.06);}
       if(t<1)return requestAnimationFrame(frame);
-      catRot%=TAU;const c=keys[idx];
+      catRot%=TAU;catSpinning=false;const c=keys[idx];
       $("#catMsg").innerHTML=`القسم: <b style="color:${CAT_COLORS[c]}">${CATS[c].name}</b>`;fanfare();
       setTimeout(()=>{if(current&&current.who===who)ask(c);},1100);
     })(t0);
@@ -640,6 +641,7 @@ function runTimer(secs,onEnd){
 function timerHTML(s){return `<div class="timer" id="timer"><span id="tleft">${s}</span><span>ثانية</span><div class="bar"><i id="tbar"></i></div></div>`;}
 
 function ask(c){
+  spinBtn.disabled=false;
   const q=pickQ(c);current.ans=current.who;current.stolen=false;
   S.done[current.who]=S.done[current.who]||{};S.done[current.who][c]=(S.done[current.who][c]||0)+1;save();renderScores();
   if(c==="culture"||c==="interview"||Array.isArray(q.o)){
@@ -822,7 +824,7 @@ function showDraw(names){
   cv.onclick=go;$("#drawSpin").onclick=go;
 }
 function showChampion(){
-  clearInterval(timerId);
+  clearInterval(timerId);spinBtn.disabled=false;
   const ppl=TEAM.filter(n=>!S.absent.includes(n)||S.scores[n]>0);
   const rank=[...ppl].sort((a,b)=>(b===S.winner)-(a===S.winner)||S.scores[b]-S.scores[a]);
   stage.innerHTML=`<div class="champ">
