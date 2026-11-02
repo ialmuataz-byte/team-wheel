@@ -168,6 +168,19 @@ body.present .map{min-width:0}
 .att{font:inherit;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--good);background:transparent;color:var(--good);cursor:pointer}
 .att.off{border-color:var(--muted);color:var(--muted)}
 .cat:disabled{opacity:.35;cursor:not-allowed;transform:none}
+
+/* Team editor */
+.editor{display:flex;flex-direction:column;gap:14px}
+.editor h2{margin:0;font-size:24px}
+.ed-list{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.ed-list li{display:flex;gap:6px;align-items:center}
+.ed-list input,.ed-add input{flex:1;min-width:0;font:inherit;font-size:17px;padding:9px 12px;border-radius:9px;border:2px solid var(--line);background:var(--panel-2);color:var(--sand)}
+.ed-list input:focus,.ed-add input:focus{outline:none;border-color:var(--saffron)}
+.ed-del{font:inherit;font-size:13px;font-weight:700;padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:transparent;color:var(--bad);cursor:pointer}
+.ed-del:hover{border-color:var(--bad)}
+.ed-add{display:flex;gap:8px;flex-wrap:wrap}
+.ed-err{color:var(--bad);font-weight:700;margin:0;min-height:1.6em}
+.ed-dot{width:12px;height:12px;border-radius:50%;flex:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
 .pop{animation:pop .35s ease-out}
@@ -199,6 +212,7 @@ body.present .map{min-width:0}
         <div class="qhead">
           <span class="label">النقاط</span>
           <div class="toolbar">
+            <button class="btn ghost small" id="editTeam" type="button">تعديل الأسماء</button>
             <button class="btn ghost small" id="newRound" type="button">جولة جديدة</button>
             <span id="resetWrap"><button class="btn ghost small" id="resetScores" type="button">لعبة جديدة</button></span>
           </div>
@@ -221,7 +235,8 @@ body.present .map{min-width:0}
 </div>
 
 <script>
-const TEAM=["منال","وهيب","مريم","سناء","قحطان","عبدالله","مروى","مزنة","المعتز"];
+const DEFAULT_TEAM=["منال","وهيب","مريم","سناء","قحطان","عبدالله","مروى","مزنة","المعتز"];
+let TEAM=[...DEFAULT_TEAM];
 const COLORS=["#f3aa3c","#35b9a6","#ea6a50"];
 
 const CATS={
@@ -351,6 +366,7 @@ const BANK={
 const KEY="team-wheel-v1";
 let S={scores:{},used:{},remaining:[...TEAM],exclude:true,muted:false,done:{},absent:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s);}catch(e){}
+if(Array.isArray(S.team)&&S.team.length>=2&&S.team.every(n=>typeof n==="string"&&n.trim()))TEAM=[...S.team];
 S.remaining=S.remaining.filter(n=>TEAM.includes(n));
 Object.keys(BANK).forEach(c=>{if(!Array.isArray(S.used[c]))S.used[c]=[];});
 TEAM.forEach(n=>{if(typeof S.scores[n]!=="number")S.scores[n]=0;});
@@ -577,6 +593,7 @@ function ask(c){
 const STOPS=["مسقط","بركاء","نخل","الرستاق","العوابي","وادي بني عوف","بلد سيت","الحمراء","مسفاة العبريين","خطم الشكلة","قمة جبل شمس"];
 const GOAL=STOPS.length-1;
 const TOKEN_COLORS=["#f3aa3c","#35b9a6","#ea6a50","#9a8ff0","#e98bb4","#7cc4f0","#c9d66a","#f08a4b","#b9a6ff"];
+const tokColor=i=>TOKEN_COLORS[i]||`hsl(${(i*47)%360} 70% 66%)`;
 const PTS=STOPS.map((_,i)=>({x:930-i*86,y:300-i*18+60*Math.sin(i*1.1)}));
 function pathD(P){
   let d=`M${P[0].x},${P[0].y}`;
@@ -607,8 +624,8 @@ function buildMap(){
     <line x1="${f.x}" y1="${f.y-16}" x2="${f.x}" y2="${f.y-50}" stroke="var(--sand)" stroke-width="3"/>
     <polygon points="${f.x},${f.y-50} ${f.x-28},${f.y-41} ${f.x},${f.y-32}" fill="var(--coral)"/>
   </svg>`;
-  $("#legend").innerHTML=TEAM.map((n,i)=>`<span><i style="background:${TOKEN_COLORS[i]}"></i>${n}</span>`).join("");
-  TEAM.forEach((n,i)=>{const t=document.createElement("div");t.className="token";t.id="tok"+i;t.style.background=TOKEN_COLORS[i];t.textContent=n.replace(/^ال/,"").slice(0,3);t.title=n;$("#map").appendChild(t);});
+  $("#legend").innerHTML=TEAM.map((n,i)=>`<span><i style="background:${tokColor(i)}"></i>${n}</span>`).join("");
+  TEAM.forEach((n,i)=>{const t=document.createElement("div");t.className="token";t.id="tok"+i;t.style.background=tokColor(i);t.textContent=n.replace(/^ال/,"").slice(0,3);t.title=n;$("#map").appendChild(t);});
 }
 function renderTokens(){
   const groups={};
@@ -639,6 +656,58 @@ function showChampion(){
   </div>`;
   $("#newRace").onclick=resetGame;
   [0,350,700].forEach(d=>setTimeout(fanfare,d));
+}
+
+
+/* ---------- Team editor ---------- */
+const cleanName=n=>String(n).replace(/[<>"'`&]/g,"").replace(/\s+/g," ").trim().slice(0,24);
+function openEditor(){
+  if(spinning)return;
+  clearInterval(timerId);
+  let rows=TEAM.map(n=>({orig:n,name:n}));
+  const draw=(msg="")=>{
+    stage.innerHTML=`<div class="editor">
+      <h2>تعديل أسماء الفريق</h2>
+      <p class="note">عدّل أي اسم مباشرة، أو احذفه، أو أضف اسمًا جديدًا. نقاط الشخص تبقى معه إذا غيّرت اسمه.</p>
+      <ul class="ed-list">${rows.map((r,i)=>`<li><span class="ed-dot" style="background:${tokColor(i)}"></span><input id="ed-${i}" data-i="${i}" value="${r.name}" aria-label="اسم ${i+1}"><button class="ed-del" type="button" data-i="${i}" aria-label="حذف ${r.name}">حذف</button></li>`).join("")}</ul>
+      <form class="ed-add" id="edAdd"><input id="ed-new" placeholder="اسم جديد" aria-label="اسم جديد"><button class="btn ghost" type="submit">إضافة</button></form>
+      <p class="ed-err" id="edErr">${msg}</p>
+      <div class="actions">
+        <button class="btn primary" id="edSave" type="button">حفظ الفريق</button>
+        <button class="btn ghost" id="edCancel" type="button">إلغاء</button>
+        <button class="btn ghost" id="edDefault" type="button">الأسماء الأصلية</button>
+      </div>
+    </div>`;
+    stage.querySelectorAll(".ed-list input").forEach(inp=>inp.oninput=()=>{rows[+inp.dataset.i].name=inp.value;});
+    stage.querySelectorAll(".ed-del").forEach(b=>b.onclick=()=>{rows.splice(+b.dataset.i,1);draw();});
+    $("#edAdd").onsubmit=e=>{e.preventDefault();const v=cleanName($("#ed-new").value);if(!v)return;
+      if(rows.some(r=>cleanName(r.name)===v)){draw(`«${v}» موجود في القائمة.`);return;}
+      rows.push({orig:null,name:v});draw();const x=$("#ed-new");x&&x.focus();};
+    $("#edCancel").onclick=()=>idle();
+    $("#edDefault").onclick=()=>{rows=DEFAULT_TEAM.map(n=>({orig:TEAM.includes(n)?n:null,name:n}));draw("رجعت الأسماء الأصلية. اضغط «حفظ الفريق» لتثبيتها.");};
+    $("#edSave").onclick=()=>{
+      const pend=cleanName(($("#ed-new")||{}).value||"");
+      if(pend&&!rows.some(r=>cleanName(r.name)===pend))rows.push({orig:null,name:pend});
+      const list=rows.map(r=>({orig:r.orig,name:cleanName(r.name)})).filter(r=>r.name);
+      const names=list.map(r=>r.name);
+      const dup=names.find((n,i)=>names.indexOf(n)!==i);
+      if(dup){draw(`الاسم «${dup}» مكرر. غيّر أحدهما.`);return;}
+      if(names.length<2){draw("العجلة تحتاج اسمين على الأقل.");return;}
+      if(names.length>20){draw("الحد الأقصى 20 اسمًا حتى تبقى العجلة مقروءة.");return;}
+      saveTeam(list);
+    };
+  };
+  draw();
+}
+function saveTeam(list){
+  const mv=(obj,def)=>{const o={};list.forEach(r=>{o[r.name]=r.orig&&obj[r.orig]!==undefined?obj[r.orig]:def();});return o;};
+  S.scores=mv(S.scores,()=>0);
+  S.done=mv(S.done,()=>({}));
+  S.absent=list.filter(r=>r.orig&&S.absent.includes(r.orig)).map(r=>r.name);
+  S.remaining=list.filter(r=>!r.orig||S.remaining.includes(r.orig)).map(r=>r.name);
+  TEAM=list.map(r=>r.name);S.team=[...TEAM];
+  wheelNames=null;current=null;save();
+  buildMap();renderScores();drawWheel();idle("تم حفظ الفريق");
 }
 
 /* ---------- Scoreboard ---------- */
@@ -673,6 +742,7 @@ $("#exclude").onchange=e=>{S.exclude=e.target.checked;if(!spinning&&!current)whe
 const muteBtn=$("#mute");
 const setMute=()=>muteBtn.textContent=S.muted?"الصوت: مكتوم":"الصوت: يعمل";
 muteBtn.onclick=()=>{S.muted=!S.muted;save();setMute();};setMute();
+$("#editTeam").onclick=openEditor;
 $("#newRound").onclick=()=>{S.remaining=[...TEAM];wheelNames=null;current=null;save();drawWheel();renderScores();idle("بدأت جولة جديدة");};
 const presBtn=$("#present");
 function setPresent(on){document.body.classList.toggle("present",on);presBtn.textContent=on?"خروج من وضع العرض":"وضع العرض";setTimeout(sizeCanvas,60);}
