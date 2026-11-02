@@ -203,6 +203,8 @@ body.present .cat-msg{font-size:28px}
 #drawSpin{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:26%;aspect-ratio:1;border-radius:50%;border:4px solid var(--sand);background:var(--ink);color:var(--sand);font:inherit;font-weight:700;font-size:17px;cursor:pointer}
 #drawSpin:disabled{opacity:.7;cursor:default}
 #drawWheel{width:100%;height:100%;display:block;cursor:pointer}
+.visual-box svg.flag{width:min(300px,100%);height:auto;border-radius:4px;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+body.present .visual-box svg.flag{width:min(460px,100%)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
 .pop{animation:pop .35s ease-out}
@@ -264,7 +266,7 @@ const COLORS=["#f3aa3c","#35b9a6","#ea6a50"];
 const CATS={
   interview:{name:"من المقابلة",hint:"بودكاست مصعد مع سعيد الشنفري"},
   culture:{name:"أسئلة ثقافية",hint:"أربعة خيارات، واحد صح"},
-  country:{name:"أي بلاد؟",hint:"رموز تدل على بلد"},
+  country:{name:"أي بلاد؟",hint:"رموز وأعلام"},
   team:{name:"مين فينا؟",hint:"اختر واحدًا من الفريق"},
   scenario:{name:"ماذا لو؟",hint:"موقف، وكيف بتتصرف"}
 };
@@ -385,6 +387,35 @@ const BANK={
  ]
 };
 
+
+/* ---------- Flags (drawn as SVG so they work on every system) ---------- */
+const FW=300,FH=200;
+const fsvg=inner=>`<svg class="flag" width="${FW}" height="${FH}" viewBox="0 0 ${FW} ${FH}" role="img" aria-label="علم">${inner}<rect x=".5" y=".5" width="${FW-1}" height="${FH-1}" fill="none" stroke="rgba(0,0,0,.25)"/></svg>`;
+const hS=(cols,ratios)=>{ratios=ratios||cols.map(()=>1);const t=ratios.reduce((a,b)=>a+b,0);let y=0;return cols.map((c,i)=>{const h=FH*ratios[i]/t;const r=`<rect x="0" y="${y}" width="${FW}" height="${h+0.5}" fill="${c}"/>`;y+=h;return r;}).join("");};
+const vS=cols=>cols.map((c,i)=>`<rect x="${i*FW/cols.length}" y="0" width="${FW/cols.length+0.5}" height="${FH}" fill="${c}"/>`).join("");
+const FLAGS=[
+ ["ساحل العاج",vS(["#f77f00","#ffffff","#009e60"]),"برتقالي ثم أبيض ثم أخضر بشكل عمودي. يشبه علم أيرلندا، لكن الألوان فيه معكوسة: أيرلندا يبدأ بالأخضر."],
+ ["مالي",vS(["#14b53a","#fcd116","#ce1126"]),"أخضر ثم أصفر ثم أحمر عموديًا. علم غينيا نفس الألوان لكن بالترتيب المعكوس: أحمر ثم أصفر ثم أخضر."],
+ ["اليمن",hS(["#ce1126","#ffffff","#000000"]),"أحمر وأبيض وأسود أفقيًا بدون أي رموز. علم مصر وسوريا والعراق بنفس الألوان، لكن كلها عليها رموز في الوسط."],
+ ["السودان",hS(["#d21034","#ffffff","#000000"])+`<polygon points="0,0 110,100 0,200" fill="#007229"/>`,"أحمر وأبيض وأسود مع مثلث أخضر عند السارية. علم فلسطين يبدأ بالأسود في الأعلى والمثلث أحمر."],
+ ["الكويت",hS(["#007a3d","#ffffff","#ce1126"])+`<polygon points="0,0 75,67 75,133 0,200" fill="#000000"/>`,"أخضر وأبيض وأحمر أفقيًا مع شبه منحرف أسود عند السارية."],
+ ["البحرين",`<rect width="${FW}" height="${FH}" fill="#ce1126"/><polygon points="0,0 75,0 115,20 75,40 115,60 75,80 115,100 75,120 115,140 75,160 115,180 75,200 0,200" fill="#ffffff"/>`,"أحمر مع شريط أبيض مسنّن بخمسة رؤوس، ترمز لأركان الإسلام الخمسة. علم قطر عنابي وفيه تسعة رؤوس."],
+ ["بالاو",`<rect width="${FW}" height="${FH}" fill="#4aadd6"/><circle cx="135" cy="100" r="60" fill="#ffde00"/>`,"أزرق فاتح مع قرص أصفر يمثل القمر، مزاح قليلًا نحو السارية. يشبه علم بنغلاديش في الفكرة."],
+ ["نيجيريا",vS(["#008751","#ffffff","#008751"]),"أخضر وأبيض وأخضر عموديًا. الأخضر يرمز للزراعة والأبيض للسلام."],
+ ["لاتفيا",hS(["#9e3039","#ffffff","#9e3039"],[2,1,2]),"أحمر داكن مع شريط أبيض رفيع في الوسط. علم النمسا يشبهه، لكن أحمره أفتح والشرائط الثلاثة متساوية."],
+ ["إستونيا",hS(["#0072ce","#000000","#ffffff"]),"أزرق ثم أسود ثم أبيض أفقيًا. من أندر تركيبات الألوان في الأعلام."],
+ ["ليتوانيا",hS(["#fdb913","#006a44","#c1272d"]),"أصفر ثم أخضر ثم أحمر أفقيًا. علم بوليفيا بنفس الألوان لكن يبدأ بالأحمر."],
+ ["الغابون",hS(["#009e60","#fcd116","#3a75c4"]),"أخضر ثم أصفر ثم أزرق أفقيًا. الأصفر يرمز لخط الاستواء الذي يمر بالبلد."],
+ ["سيراليون",hS(["#1eb53a","#ffffff","#0072c6"]),"أخضر ثم أبيض ثم أزرق أفقيًا. الأزرق يرمز لميناء فريتاون على المحيط الأطلسي."],
+ ["بنين",`<rect width="${FW}" height="${FH}" fill="#e8112d"/><rect width="${FW}" height="100" fill="#fcd116"/><rect width="120" height="${FH}" fill="#008751"/>`,"شريط أخضر عمودي عند السارية، وبجانبه أصفر فوق أحمر."],
+ ["مدغشقر",`<rect width="${FW}" height="${FH}" fill="#007e3a"/><rect width="${FW}" height="100" fill="#fc3d32"/><rect width="100" height="${FH}" fill="#ffffff"/>`,"شريط أبيض عمودي عند السارية، وبجانبه أحمر فوق أخضر. يشبه علم بنين في الشكل."],
+ ["موريشيوس",hS(["#ea2839","#1a206d","#ffd500","#00a551"]),"أربعة شرائط أفقية: أحمر، أزرق، أصفر، أخضر."],
+ ["سيشل",`<rect width="${FW}" height="${FH}" fill="#007a3d"/><polygon points="0,200 0,0 100,0" fill="#003f87"/><polygon points="0,200 100,0 200,0" fill="#fcd856"/><polygon points="0,200 200,0 300,0 300,67" fill="#d62828"/><polygon points="0,200 300,67 300,133" fill="#ffffff"/>`,"خمسة أشرطة مائلة تنطلق من الزاوية السفلية: أزرق، أصفر، أحمر، أبيض، أخضر."],
+ ["بوليفيا",hS(["#d52b1e","#f9e300","#007934"]),"أحمر ثم أصفر ثم أخضر أفقيًا. علم غانا بنفس الألوان لكن عليه نجمة سوداء في الوسط."],
+ ["التشيك",hS(["#ffffff","#d7141a"])+`<polygon points="0,0 150,100 0,200" fill="#11457e"/>`,"أبيض فوق أحمر مع مثلث أزرق عند السارية. علم بولندا أبيض فوق أحمر بدون المثلث."],
+];
+
+BANK.country.push(...FLAGS.map(([a,svg,w])=>({p:"أي دولة هذا علمها؟",v:fsvg(svg),a,w})));
 /* ---------- State ---------- */
 const KEY="team-wheel-v1";
 let S={scores:{},used:{},remaining:[...TEAM],exclude:true,muted:false,done:{},absent:[]};
@@ -491,7 +522,7 @@ function idle(msg){
     <p class="big">${msg||"جاهزين؟"}</p>
     ${S.final?`<div class="summit-note">على قمة جبل شمس: <b>${atSummit().join(" و")}</b>. الجولة الأخيرة مستمرة.<br>باقي دور: ${finalLeft().join("، ")||"لا أحد"}</div>`:""}
     <p>اضغط «لُف» في وسط العجلة ليختار اسمًا من الفريق، ثم لُف عجلة الأقسام لاختيار نوع السؤال.</p>
-    <p class="note">${BANK.country.length} بلدًا · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.team.length} سؤال «مين فينا» · ${BANK.interview.length} من المقابلة · ${BANK.scenario.length} موقفًا</p>
+    <p class="note">${BANK.country.length} سؤال «أي بلاد؟» · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.team.length} سؤال «مين فينا» · ${BANK.interview.length} من المقابلة · ${BANK.scenario.length} موقفًا</p>
   </div>`;
 }
 const CAT_COLORS={visual:"#35b9a6",culture:"#f3aa3c",country:"#9a8ff0",team:"#e98bb4",interview:"#7cc4f0",scenario:"#ea6a50"};
