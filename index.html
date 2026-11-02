@@ -48,7 +48,7 @@ h1 span{color:var(--saffron)}
 .label{font-size:12px;letter-spacing:.06em;color:var(--muted);font-weight:500}
 
 .score-list{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-.score-list li{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:var(--panel-2)}
+.score-list li{display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;background:var(--panel-2)}
 .score-list li.done .nm{color:var(--muted)}
 .score-list .tag{font-size:12px;color:var(--muted)}
 .score-list .pts{font-variant-numeric:tabular-nums;font-weight:700;color:var(--saffron);min-width:2ch;text-align:left}
@@ -164,6 +164,10 @@ body.present .score-list li{padding:4px 10px}
 .rank{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:4px;min-width:min(320px,100%)}
 .rank li{display:flex;justify-content:space-between;gap:10px;padding:6px 12px;border-radius:8px;background:var(--panel-2);font-variant-numeric:tabular-nums}
 body.present .map{min-width:0}
+.score-list li.absent{opacity:.5}
+.att{font:inherit;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;border:1px solid var(--good);background:transparent;color:var(--good);cursor:pointer}
+.att.off{border-color:var(--muted);color:var(--muted)}
+.cat:disabled{opacity:.35;cursor:not-allowed;transform:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @keyframes pop{from{transform:scale(.85);opacity:.4}to{transform:scale(1);opacity:1}}
 .pop{animation:pop .35s ease-out}
@@ -193,10 +197,10 @@ body.present .map{min-width:0}
       </div>
       <div class="card">
         <div class="qhead">
-          <span class="label">المحطات</span>
+          <span class="label">النقاط</span>
           <div class="toolbar">
             <button class="btn ghost small" id="newRound" type="button">جولة جديدة</button>
-            <span id="resetWrap"><button class="btn ghost small" id="resetScores" type="button">تصفير النقاط</button></span>
+            <span id="resetWrap"><button class="btn ghost small" id="resetScores" type="button">لعبة جديدة</button></span>
           </div>
         </div>
         <ul class="score-list" id="scores"></ul>
@@ -209,7 +213,7 @@ body.present .map{min-width:0}
   <section class="card map-card">
     <div class="map-head">
       <h2>السباق إلى قمة جبل شمس</h2>
-      <span class="note">كل إجابة صحيحة تقدّمك محطة. أول من يصل القمة يفوز.</span>
+      <span class="note">كل نقطة تقدّمك محطة. الفائز صاحب أكثر النقاط بعد ما يجاوب الكل سؤالين من كل قسم.</span>
     </div>
     <div class="map-scroll"><div class="map" id="map"></div></div>
     <div class="legend" id="legend"></div>
@@ -248,7 +252,11 @@ const BANK={
   {p:"ما الحرف الذي يأتي بعد ذلك؟",v:`<div class="letters" style="direction:rtl"><span>و</span><span>ا</span><span>ث</span><span>أ</span><span>خ</span><span>س</span><span>س</span><span style="border-color:var(--saffron);color:var(--saffron)">؟</span></div>`,a:"ث",w:"هذه أوائل حروف الأعداد بالترتيب: واحد، اثنان، ثلاثة، أربعة، خمسة، ستة، سبعة… والتالي ثمانية، فالحرف ث."},
   {p:"رتّب الحروف لتكوّن كلمة عُمانية مشهورة.",v:`<div class="letters"><span>ع</span><span>ل</span><span>ق</span><span>ة</span></div>`,a:"قلعة",w:"ق ل ع ة. والقلاع من أشهر معالم عُمان، مثل قلعة نزوى وقلعة بهلا."},
   {p:"رتّب الحروف لتكوّن كلمة.",v:`<div class="letters"><span>ج</span><span>ر</span><span>خ</span><span>ن</span></div>`,a:"خنجر",w:"خ ن ج ر. والخنجر العُماني جزء من الزي التقليدي ويتوسط الشعار الوطني."},
-  {p:"أي رقم لا ينتمي للمجموعة؟ ولماذا؟",v:`<div class="seq">2 &nbsp; 3 &nbsp; 5 &nbsp; 9 &nbsp; 11 &nbsp; 13</div>`,a:"9",w:"كل الأرقام أعداد أولية (لا تقبل القسمة إلا على 1 وعلى نفسها) ما عدا 9، لأنها تقبل القسمة على 3."}
+  {p:"أي رقم لا ينتمي للمجموعة؟ ولماذا؟",v:`<div class="seq">2 &nbsp; 3 &nbsp; 5 &nbsp; 9 &nbsp; 11 &nbsp; 13</div>`,a:"9",w:"كل الأرقام أعداد أولية (لا تقبل القسمة إلا على 1 وعلى نفسها) ما عدا 9، لأنها تقبل القسمة على 3."},
+  {p:"ما المثل الذي تعبّر عنه هذه الصور؟",v:`<div class="emoji-line">🗣️ = 🥈 &nbsp; 🤐 = 🥇</div>`,a:"إذا كان الكلام من فضة فالسكوت من ذهب",w:"🗣️ الكلام يساوي 🥈 الفضة، و🤐 السكوت يساوي 🥇 الذهب."},
+  {p:"ما الرقم الناقص؟",v:`<div class="seq">1, 4, 9, 16, 25, <span class="q">?</span></div>`,a:"36",w:"هذه مربعات الأعداد: 1×1، 2×2، 3×3، 4×4، 5×5، والتالي 6×6 = 36."},
+  {p:"ما الرقم الناقص؟",v:`<div class="seq">2, 3, 5, 9, 17, <span class="q">?</span></div>`,a:"33",w:"كل رقم يساوي ضعف الرقم الذي قبله ناقص 1: 17 × 2 − 1 = 33."},
+  {p:"رتّب الحروف لتكوّن كلمة عُمانية مشهورة.",v:`<div class="letters"><span>ن</span><span>ب</span><span>ل</span><span>ا</span></div>`,a:"لبان",w:"ل ب ا ن. واللبان العُماني من ظفار مشهور منذ آلاف السنين، وكان يُصدَّر عبر طريق البخور."}
  ],
  country:[
   ["🗡️🏰🐢","عُمان","🗡️ الخنجر العُماني، و🏰 القلاع والحصون المنتشرة في البلد، و🐢 السلاحف الخضراء اللي تعشش في رأس الجنز."],
@@ -331,17 +339,22 @@ const BANK={
   {q:"جاءك عرض عمل براتب مضاعف في جزيرة بلا إنترنت لمدة سنة. تقبل أو ترفض؟ ولماذا؟"},
   {q:"لو تضيف قاعدة واحدة يلتزم بها الجميع في الاجتماع الأسبوعي، ما هي؟"},
   {q:"اكتشفت أن مشروعًا عملتم عليه شهرًا سيُلغى غدًا، والفريق ما يدري. ماذا تفعل اليوم؟"},
-  {q:"لو تقدر تأتمت (تجعلها تلقائية) مهمة واحدة من شغلك اليومي، أي مهمة تختار؟"}
+  {q:"لو تقدر تأتمت (تجعلها تلقائية) مهمة واحدة من شغلك اليومي، أي مهمة تختار؟"},
+  {q:"لو تختار مكان اجتماعنا الأسبوعي القادم في أي مكان في العالم، وين يكون؟ ولماذا؟"},
+  {q:"زميل جديد انضم للفريق اليوم. ما أهم نصيحة تعطيه؟"},
+  {q:"عندك ساعة فاضية في الدوام بدون أي مهام. كيف تستغلها؟"},
+  {q:"لو تقدر تمسح اختراعًا واحدًا من الوجود، أي اختراع تختار؟ ولماذا؟"}
  ]
 };
 
 /* ---------- State ---------- */
 const KEY="team-wheel-v1";
-let S={scores:{},used:{visual:[],culture:[],scenario:[]},remaining:[...TEAM],exclude:true,muted:false};
+let S={scores:{},used:{},remaining:[...TEAM],exclude:true,muted:false,done:{},absent:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY)||"null");if(s)S=Object.assign(S,s);}catch(e){}
 S.remaining=S.remaining.filter(n=>TEAM.includes(n));
 Object.keys(BANK).forEach(c=>{if(!Array.isArray(S.used[c]))S.used[c]=[];});
 TEAM.forEach(n=>{if(typeof S.scores[n]!=="number")S.scores[n]=0;});
+if(!S.done||typeof S.done!=="object")S.done={};if(!Array.isArray(S.absent))S.absent=[];delete S.finished;
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
 const $=s=>document.querySelector(s);
@@ -349,13 +362,22 @@ const stage=$("#stage"), canvas=$("#wheel"), ctx=canvas.getContext("2d"), spinBt
 let rot=0, spinning=false, current=null, timerId=null;
 const shuffle=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
 
-function pool(){ if(!S.exclude) return [...TEAM]; if(!S.remaining.length) S.remaining=[...TEAM]; return TEAM.filter(n=>S.remaining.includes(n)); }
+const PER=2;
+const leftIn=(n,c)=>PER-((S.done[n]||{})[c]||0);
+const answered=n=>Object.keys(CATS).reduce((t,c)=>t+((S.done[n]||{})[c]||0),0);
+const totalQ=()=>PER*Object.keys(CATS).length;
+const present=()=>TEAM.filter(n=>!S.absent.includes(n));
+const active=()=>present().filter(n=>answered(n)<totalQ());
+const gameOver=()=>present().length>0&&!active().length;
+function pool(){ const act=active(); if(!S.exclude) return act; let r=act.filter(n=>S.remaining.includes(n)); if(!r.length&&act.length){S.remaining=[...TEAM];r=act;} return r; }
 
 /* ---------- Wheel ---------- */
 function sizeCanvas(){const d=window.devicePixelRatio||1,w=canvas.clientWidth;canvas.width=w*d;canvas.height=w*d;drawWheel();}
 function drawWheel(){
   const names=pool(), n=names.length, W=canvas.width, R=W/2, seg=2*Math.PI/n, d=window.devicePixelRatio||1;
+  if(W<40)return;
   ctx.clearRect(0,0,W,W);
+  if(!n){ctx.beginPath();ctx.arc(R,R,R-2*d,0,2*Math.PI);ctx.fillStyle="#253057";ctx.fill();return;}
   ctx.save();ctx.translate(R,R);
   ctx.beginPath();ctx.arc(0,0,R-2*d,0,2*Math.PI);ctx.fillStyle="#f4ead5";ctx.fill();
   for(let i=0;i<n;i++){
@@ -388,7 +410,7 @@ function fanfare(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,.18,.
 
 function spin(){
   if(spinning) return;
-  if(S.finished){showChampion();return;}
+  if(!pool().length){showChampion();return;}
   clearInterval(timerId);
   const names=pool(), n=names.length, seg=2*Math.PI/n;
   const idx=Math.floor(Math.random()*n);
@@ -431,12 +453,12 @@ function showWinner(who){
     <p class="winner pop">${who}</p>
     <div class="label">اختر نوع السؤال</div>
     <div class="cats">
-      ${Object.keys(CATS).map(c=>`<button class="cat" data-c="${c}" type="button"><strong>${CATS[c].name}</strong><small>${CATS[c].hint} · بقي ${remainingCount(c)}</small></button>`).join("")}
+      ${Object.keys(CATS).map(c=>{const l=leftIn(who,c);return `<button class="cat" data-c="${c}" type="button" ${l<=0?"disabled":""}><strong>${CATS[c].name}</strong><small>${l<=0?"خلّصت هذا القسم":`${CATS[c].hint} · باقي لك ${l} من ${PER}`}</small></button>`;}).join("")}
       <button class="cat" data-c="random" type="button"><strong>فاجئني</strong><small>نوع عشوائي</small></button>
     </div>
     <div class="actions"><button class="btn ghost" id="skip" type="button">لُف مرة ثانية</button></div>`;
   stage.querySelectorAll(".cat").forEach(b=>b.onclick=()=>{
-    let c=b.dataset.c; if(c==="random") c=shuffle(Object.keys(CATS))[0];
+    let c=b.dataset.c; if(c==="random") c=shuffle(Object.keys(CATS).filter(k=>leftIn(who,k)>0))[0];
     ask(c);
   });
   $("#skip").onclick=()=>{ if(S.exclude && !S.remaining.includes(who)) S.remaining.push(who); save(); renderScores(); drawWheel(); spin(); };
@@ -450,13 +472,13 @@ function pickQ(c){
 }
 function head(c){return `<div class="qhead"><span class="chip ${c}">${CATS[c].name}</span><span class="who" id="who">السؤال لـ <b>${current.who}</b></span></div>`;}
 function setWho(name,stolen){current.ans=name;renderTokens();const w=$("#who");if(w)w.innerHTML=stolen?`<span class="steal-tag">سرقة!</span> الفرصة لـ <b>${name}</b>`:`السؤال لـ <b>${name}</b>`;}
-function award(){const n=current.ans||current.who;S.scores[n]=Math.min(GOAL,(S.scores[n]||0)+1);if(S.scores[n]>=GOAL&&!S.finished){S.finished=n;setTimeout(showChampion,1600);}save();renderScores();return n;}
+function award(){const n=current.ans||current.who;S.scores[n]=(S.scores[n]||0)+1;save();renderScores();return n;}
 function nextBtn(){return `<button class="btn primary" id="next" type="button">الدور التالي</button>`;}
-function bindNext(){const n=$("#next");if(n)n.onclick=()=>{clearInterval(timerId);current=null;renderTokens();idle("دور جديد؟");};}
+function bindNext(){const n=$("#next");if(n)n.onclick=()=>{clearInterval(timerId);current=null;renderTokens();drawWheel();if(gameOver())showChampion();else idle("دور جديد؟");};}
 
 /* Steal: flash names, land on someone other than the owner */
 function stealPick(done){
-  const others=TEAM.filter(n=>n!==current.who), thief=others[Math.floor(Math.random()*others.length)];
+  const others=present().filter(n=>n!==current.who), thief=others[Math.floor(Math.random()*others.length)];
   const box=document.createElement("div");box.className="steal-box";box.innerHTML=`<span class="label">مين بيسرق السؤال؟</span><span class="steal-name" id="sname">…</span>`;
   $("#res").replaceChildren(box);$("#act").innerHTML="";
   let i=0;const steps=reduced()?1:14;
@@ -485,6 +507,7 @@ function timerHTML(s){return `<div class="timer" id="timer"><span id="tleft">${s
 
 function ask(c){
   const q=pickQ(c);current.ans=current.who;current.stolen=false;
+  S.done[current.who]=S.done[current.who]||{};S.done[current.who][c]=(S.done[current.who][c]||0)+1;save();renderScores();
   if(c==="culture"){
     const opts=shuffle(q.o.map((t,i)=>({t,ok:i===q.a})));
     const L=["أ","ب","ج","د"];
@@ -589,7 +612,7 @@ function buildMap(){
 }
 function renderTokens(){
   const groups={};
-  TEAM.forEach((n,i)=>{const st=Math.min(GOAL,S.scores[n]||0);(groups[st]=groups[st]||[]).push(i);});
+  TEAM.forEach((n,i)=>{const t=$("#tok"+i),ab=S.absent.includes(n);t.hidden=ab;if(ab)return;const st=Math.min(GOAL,S.scores[n]||0);(groups[st]=groups[st]||[]).push(i);});
   Object.entries(groups).forEach(([st,arr])=>{
     const p=PTS[st];
     arr.forEach((i,k)=>{
@@ -601,16 +624,20 @@ function renderTokens(){
     });
   });
 }
+function resetGame(){TEAM.forEach(n=>S.scores[n]=0);S.done={};S.remaining=[...TEAM];save();renderScores();drawWheel();idle("بدأت لعبة جديدة");}
 function showChampion(){
   clearInterval(timerId);
-  const rank=[...TEAM].sort((a,b)=>S.scores[b]-S.scores[a]);
+  const ppl=TEAM.filter(n=>!S.absent.includes(n)||answered(n)>0);
+  const rank=[...ppl].sort((a,b)=>S.scores[b]-S.scores[a]);
+  const top=S.scores[rank[0]]||0, winners=rank.filter(n=>S.scores[n]===top);
   stage.innerHTML=`<div class="champ">
-    <div class="label">وصل إلى قمة جبل شمس أولًا</div>
-    <p class="winner pop">${S.finished}</p>
-    <ol class="rank">${rank.map((n,i)=>`<li><span>${i+1}. ${n}</span><span>${STOPS[Math.min(GOAL,S.scores[n])]}</span></li>`).join("")}</ol>
-    <div class="actions" style="margin-top:0"><button class="btn primary" id="newRace" type="button">سباق جديد</button></div>
+    <div class="label">${winners.length>1?"تعادل في المركز الأول":"الفائز بأكثر النقاط"}</div>
+    <p class="winner pop">${winners.join(" و")}</p>
+    <p class="note">${top} ${top===1?"نقطة":"نقاط"}</p>
+    <ol class="rank">${rank.map((n,i)=>`<li><span>${i+1}. ${n}</span><span>${S.scores[n]} نقاط</span></li>`).join("")}</ol>
+    <div class="actions" style="margin-top:0"><button class="btn primary" id="newRace" type="button">لعبة جديدة</button></div>
   </div>`;
-  $("#newRace").onclick=()=>{TEAM.forEach(n=>S.scores[n]=0);S.finished=null;S.remaining=[...TEAM];save();renderScores();drawWheel();idle("بدأ سباق جديد");};
+  $("#newRace").onclick=resetGame;
   [0,350,700].forEach(d=>setTimeout(fanfare,d));
 }
 
@@ -619,19 +646,26 @@ function renderScores(){
   const max=Math.max(...TEAM.map(n=>S.scores[n]));
   const list=[...TEAM].sort((a,b)=>S.scores[b]-S.scores[a]);
   $("#scores").innerHTML=list.map(n=>{
-    const done=S.exclude&&!S.remaining.includes(n);
-    return `<li class="${done?"done":""} ${max>0&&S.scores[n]===max?"lead":""}"><span class="nm">${n}</span><span class="tag">${done?"أخذ دوره":""}</span><span class="pts">${S.scores[n]}/${GOAL}</span></li>`;
+    const ab=S.absent.includes(n), q=answered(n), fin=q>=totalQ();
+    const done=!ab&&(fin||(S.exclude&&!S.remaining.includes(n)));
+    const tag=ab?"":fin?"خلّص أسئلته":`${q}/${totalQ()} أسئلة`;
+    return `<li class="${done?"done":""} ${ab?"absent":""} ${max>0&&S.scores[n]===max?"lead":""}"><span class="nm">${n}</span><span class="tag">${tag}</span><button class="att ${ab?"off":""}" type="button" data-n="${n}" aria-pressed="${!ab}">${ab?"غائب":"حاضر"}</button><span class="pts">${S.scores[n]}</span></li>`;
   }).join("");
+  document.querySelectorAll(".att").forEach(b=>b.onclick=()=>{
+    const n=b.dataset.n;
+    S.absent=S.absent.includes(n)?S.absent.filter(x=>x!==n):[...S.absent,n];
+    save();renderScores();if(!spinning)drawWheel();
+  });
   if($("#tok0"))renderTokens();
 }
 function bindReset(){
   $("#resetScores").onclick=()=>{
-    $("#resetWrap").innerHTML=`<span class="confirm">متأكد؟ <button class="btn ghost small" id="yes" type="button">نعم، صفّر</button><button class="btn ghost small" id="no" type="button">إلغاء</button></span>`;
-    $("#yes").onclick=()=>{TEAM.forEach(n=>S.scores[n]=0);S.finished=null;save();renderScores();restoreReset();};
+    $("#resetWrap").innerHTML=`<span class="confirm">متأكد؟ <button class="btn ghost small" id="yes" type="button">نعم، ابدأ من جديد</button><button class="btn ghost small" id="no" type="button">إلغاء</button></span>`;
+    $("#yes").onclick=()=>{resetGame();restoreReset();};
     $("#no").onclick=restoreReset;
   };
 }
-function restoreReset(){$("#resetWrap").innerHTML=`<button class="btn ghost small" id="resetScores" type="button">تصفير النقاط</button>`;bindReset();}
+function restoreReset(){$("#resetWrap").innerHTML=`<button class="btn ghost small" id="resetScores" type="button">لعبة جديدة</button>`;bindReset();}
 
 /* ---------- Init ---------- */
 $("#exclude").checked=S.exclude;
@@ -652,7 +686,7 @@ spinBtn.onclick=spin;
 bindReset();
 document.documentElement.dir="rtl";document.documentElement.lang="ar";
 window.addEventListener("resize",sizeCanvas);
-buildMap();renderScores();if(S.finished)showChampion();else idle();sizeCanvas();
+buildMap();renderScores();if(gameOver())showChampion();else idle();sizeCanvas();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(drawWheel);
 </script>
 
