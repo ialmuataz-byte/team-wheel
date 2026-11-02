@@ -256,40 +256,16 @@ let TEAM=[...DEFAULT_TEAM];
 const COLORS=["#f3aa3c","#35b9a6","#ea6a50"];
 
 const CATS={
-  visual:{name:"ألغاز بصرية",hint:"شوف وفكّر"},
+  interview:{name:"من المقابلة",hint:"بودكاست مصعد مع سعيد الشنفري"},
   culture:{name:"أسئلة ثقافية",hint:"أربعة خيارات، واحد صح"},
   country:{name:"أي بلاد؟",hint:"رموز تدل على بلد"},
   team:{name:"مين فينا؟",hint:"اختر واحدًا من الفريق"},
-  interview:{name:"من المقابلة",hint:"بودكاست مصعد مع سعيد الشنفري"},
   scenario:{name:"ماذا لو؟",hint:"موقف، وكيف بتتصرف"}
 };
 
 /* ---------- Question bank ---------- */
-const svgSquares=`<svg width="200" height="200" viewBox="0 0 200 200" fill="none" stroke="currentColor" stroke-width="4"><rect x="10" y="10" width="180" height="180"/><line x1="70" y1="10" x2="70" y2="190"/><line x1="130" y1="10" x2="130" y2="190"/><line x1="10" y1="70" x2="190" y2="70"/><line x1="10" y1="130" x2="190" y2="130"/></svg>`;
-const svgTriangles=`<svg width="260" height="220" viewBox="0 0 260 220" fill="none" stroke="currentColor" stroke-width="4" stroke-linejoin="round"><polygon points="130,10 10,210 250,210"/><line x1="130" y1="10" x2="90" y2="210"/><line x1="130" y1="10" x2="170" y2="210"/><line x1="70" y1="110" x2="190" y2="110"/></svg>`;
-const svgOdd=`<svg width="300" height="90" viewBox="0 0 300 90" fill="none" stroke="currentColor" stroke-width="4"><circle cx="40" cy="45" r="30"/><rect x="95" y="15" width="60" height="60"/><polygon points="215,15 245,75 185,75"/><polygon points="270,15 295,45 270,75 245,45" transform="translate(-5 0)" stroke="var(--saffron)"/></svg>`;
 
 const BANK={
- visual:[
-  {p:"ما المثل الذي تعبّر عنه هذه الصور؟",v:`<div class="emoji-line">⏰ = ⚔️</div>`,a:"الوقت كالسيف، إن لم تقطعه قطعك",w:"⏰ رمز الوقت، و⚔️ سيف، وعلامة = تعني «كالـ». فالصورة تقول: الوقت كالسيف."},
-  {p:"ما المثل الذي تعبّر عنه هذه الصور؟",v:`<div class="emoji-line">🐦✋ &gt; 🐦🐦🐦🌳</div>`,a:"عصفور في اليد ولا عشرة على الشجرة",w:"عصفور واحد في اليد ✋، وعلامة «أكبر من» تعني أنه أفضل من العصافير الكثيرة على الشجرة 🌳."},
-  {p:"ما العبارة المقصودة؟",v:`<div class="emoji-line">🍯🌙</div>`,a:"شهر العسل",w:"🌙 الهلال يرمز للشهر، و🍯 جرّة عسل."},
-  {p:"ما العبارة المقصودة؟",v:`<div class="emoji-line">📚🐛</div>`,a:"دودة كتب",w:"📚 كتب + 🐛 دودة. وتُقال عن الشخص اللي يحب القراءة كثيرًا."},
-  {p:"ما الرقم الناقص؟",v:`<div class="seq">2, 6, 12, 20, 30, <span class="q">?</span></div>`,a:"42",w:"الفرق بين كل رقم والذي بعده يزيد 2 كل مرة: +4، +6، +8، +10، فالتالي +12. و30 + 12 = 42."},
-  {p:"ما الرقم الناقص؟",v:`<div class="seq">1, 1, 2, 3, 5, 8, <span class="q">?</span></div>`,a:"13",w:"كل رقم هو مجموع الرقمين اللذين قبله (متتالية فيبوناتشي): 5 + 8 = 13."},
-  {p:"ما الرقم الناقص؟",v:`<div class="seq">3, 9, 27, <span class="q">?</span>, 243</div>`,a:"81",w:"كل رقم يساوي الرقم الذي قبله مضروبًا في 3: 27 × 3 = 81، و81 × 3 = 243."},
-  {p:"احسب قيمة كل رمز، ثم أوجد الناتج الأخير.",v:`<div class="eq">🍎 + 🍎 + 🍎 = 30<br>🍎 + 🍌 + 🍌 = 18<br>🍌 − 🥥 = 2<br>🥥 + 🍎 + 🍌 = <b style="color:var(--saffron)">?</b></div>`,a:"16",w:"3 تفاحات = 30، إذًا التفاحة 10. ثم 10 + موزتين = 18، إذًا الموزة 4. ثم 4 − جوز الهند = 2، إذًا جوز الهند 2. والمطلوب 2 + 10 + 4 = 16."},
-  {p:"كم مربعًا في الشكل؟",v:svgSquares,a:"14 مربعًا",w:"9 مربعات صغيرة (1×1)، و4 مربعات متوسطة (2×2) كل واحد يتكون من 4 صغيرة، ومربع كبير واحد يشمل الشكل كله: 9 + 4 + 1 = 14."},
-  {p:"كم مثلثًا في الشكل؟",v:svgTriangles,a:"12 مثلثًا",w:"الخطان النازلان من الرأس يقسمان القاعدة إلى 3 أجزاء، فيتكوّن 6 مثلثات: 3 صغيرة، و2 من جزأين، و1 كبير. والخط الأفقي يكرر نفس التقسيم في الجزء العلوي، فتكون 6 أخرى. المجموع 12."},
-  {p:"ما الحرف الذي يأتي بعد ذلك؟",v:`<div class="letters" style="direction:rtl"><span>و</span><span>ا</span><span>ث</span><span>أ</span><span>خ</span><span>س</span><span>س</span><span style="border-color:var(--saffron);color:var(--saffron)">؟</span></div>`,a:"ث",w:"هذه أوائل حروف الأعداد بالترتيب: واحد، اثنان، ثلاثة، أربعة، خمسة، ستة، سبعة… والتالي ثمانية، فالحرف ث."},
-  {p:"رتّب الحروف لتكوّن كلمة عُمانية مشهورة.",v:`<div class="letters"><span>ع</span><span>ل</span><span>ق</span><span>ة</span></div>`,a:"قلعة",w:"ق ل ع ة. والقلاع من أشهر معالم عُمان، مثل قلعة نزوى وقلعة بهلا."},
-  {p:"رتّب الحروف لتكوّن كلمة.",v:`<div class="letters"><span>ج</span><span>ر</span><span>خ</span><span>ن</span></div>`,a:"خنجر",w:"خ ن ج ر. والخنجر العُماني جزء من الزي التقليدي ويتوسط الشعار الوطني."},
-  {p:"أي رقم لا ينتمي للمجموعة؟ ولماذا؟",v:`<div class="seq">2 &nbsp; 3 &nbsp; 5 &nbsp; 9 &nbsp; 11 &nbsp; 13</div>`,a:"9",w:"كل الأرقام أعداد أولية (لا تقبل القسمة إلا على 1 وعلى نفسها) ما عدا 9، لأنها تقبل القسمة على 3."},
-  {p:"ما المثل الذي تعبّر عنه هذه الصور؟",v:`<div class="emoji-line">🗣️ = 🥈 &nbsp; 🤐 = 🥇</div>`,a:"إذا كان الكلام من فضة فالسكوت من ذهب",w:"🗣️ الكلام يساوي 🥈 الفضة، و🤐 السكوت يساوي 🥇 الذهب."},
-  {p:"ما الرقم الناقص؟",v:`<div class="seq">1, 4, 9, 16, 25, <span class="q">?</span></div>`,a:"36",w:"هذه مربعات الأعداد: 1×1، 2×2، 3×3، 4×4، 5×5، والتالي 6×6 = 36."},
-  {p:"ما الرقم الناقص؟",v:`<div class="seq">2, 3, 5, 9, 17, <span class="q">?</span></div>`,a:"33",w:"كل رقم يساوي ضعف الرقم الذي قبله ناقص 1: 17 × 2 − 1 = 33."},
-  {p:"رتّب الحروف لتكوّن كلمة عُمانية مشهورة.",v:`<div class="letters"><span>ن</span><span>ب</span><span>ل</span><span>ا</span></div>`,a:"لبان",w:"ل ب ا ن. واللبان العُماني من ظفار مشهور منذ آلاف السنين، وكان يُصدَّر عبر طريق البخور."}
- ],
  country:[
   ["🗡️🏰🐢","عُمان","🗡️ الخنجر العُماني، و🏰 القلاع والحصون المنتشرة في البلد، و🐢 السلاحف الخضراء اللي تعشش في رأس الجنز."],
   ["🗼🥐🧀","فرنسا","🗼 برج إيفل في باريس، و🥐 الكرواسون، و🧀 الأجبان الفرنسية المشهورة."],
@@ -498,7 +474,7 @@ function idle(msg){
   stage.innerHTML=`<div class="idle">
     <p class="big">${msg||"جاهزين؟"}</p>
     <p>اضغط «لُف» في وسط العجلة ليختار اسمًا من الفريق، ثم لُف عجلة الأقسام لاختيار نوع السؤال.</p>
-    <p class="note">${BANK.visual.length} لغزًا بصريًا · ${BANK.country.length} بلدًا · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.team.length} سؤال «مين فينا» · ${BANK.interview.length} من المقابلة · ${BANK.scenario.length} موقفًا</p>
+    <p class="note">${BANK.country.length} بلدًا · ${BANK.culture.length} سؤالًا ثقافيًا · ${BANK.team.length} سؤال «مين فينا» · ${BANK.interview.length} من المقابلة · ${BANK.scenario.length} موقفًا</p>
   </div>`;
 }
 const CAT_COLORS={visual:"#35b9a6",culture:"#f3aa3c",country:"#9a8ff0",team:"#e98bb4",interview:"#7cc4f0",scenario:"#ea6a50"};
@@ -631,7 +607,7 @@ function ask(c){
         revealAll();$("#res").innerHTML=`<p class="verdict no">حتى السرقة ما نجحت! الصحيحة مظللة بالأخضر.</p>`;$("#act").innerHTML=nextBtn();bindNext();
       }
     });
-  } else if(c==="visual"||c==="country"){
+  } else if(c==="country"){
     stage.innerHTML=`${head(c)}<p class="qtext">${q.p}</p><div class="visual-box">${q.v}</div>
       ${timerHTML(30)}<div id="res"></div><div class="actions" id="act"></div>`;
     const showSol=()=>{
