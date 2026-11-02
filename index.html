@@ -485,8 +485,10 @@ function tick(f=900,dur=.03,vol=.08){
 }
 function fanfare(){[523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,.18,.12),i*110));}
 
+let boostMain=null;
 function spin(){
-  if(spinning||catSpinning) return;
+  if(spinning){ if(boostMain) boostMain(); return; }
+  if(catSpinning) return;
   if(S.winner){showChampion();return;}
   if(S.final&&!finalLeft().length){finishGame();return;}
   if(!pool().length){idle("ما فيه أحد حاضر");return;}
@@ -497,9 +499,10 @@ function spin(){
   let target=-Math.PI/2-(idx+.5)*seg+jitter;
   const TAU=2*Math.PI;
   while(target<rot+TAU*5) target+=TAU;
-  const start=rot, dist=target-start, dur=reduced()?600:4600, t0=performance.now();
+  let start=rot, dist=target-start, dur=reduced()?600:4600, t0=performance.now();
   let lastSeg=Math.floor(((-Math.PI/2-rot)%TAU+TAU)%TAU/seg);
-  spinning=true;spinBtn.disabled=true;
+  boostMain=()=>{target+=TAU*2;start=rot;dist=target-start;t0=performance.now();dur=reduced()?600:Math.max(3200,dur*.85);tick(1300,.05,.1);};
+  spinning=true;spinBtn.disabled=false;
   stage.innerHTML=`<div class="idle"><p class="big">العجلة تدور...</p><p>من سيكون صاحب الدور؟</p></div>`;
   (function frame(now){
     const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4);
@@ -508,7 +511,7 @@ function spin(){
     if(s!==lastSeg){lastSeg=s;tick();}
     if(t<1) requestAnimationFrame(frame);
     else{
-      rot=rot%TAU;spinning=false;spinBtn.disabled=false;
+      rot=rot%TAU;spinning=false;boostMain=null;spinBtn.disabled=false;
       const who=names[idx];
       S.remaining=S.remaining.filter(x=>x!==who);
       save();fanfare();showWinner(who);spinBtn.disabled=true;
@@ -566,21 +569,23 @@ function showWinner(who){
     </div>`;
   const cv=$("#catWheel"), dpr=window.devicePixelRatio||1;
   cv.width=cv.clientWidth*dpr;cv.height=cv.clientWidth*dpr;drawCatWheel(cv);
-  let busy=false;
+  let busy=false, boost=null;
   const go=()=>{
-    if(busy||spinning)return;busy=true;catSpinning=true;$("#catSpin").disabled=true;$("#skip").disabled=true;
+    if(busy){if(boost)boost();return;}
+    if(spinning)return;busy=true;catSpinning=true;$("#skip").disabled=true;
     const keys=Object.keys(CATS), n=keys.length, seg=2*Math.PI/n, TAU=2*Math.PI;
     const idx=Math.floor(Math.random()*n), jit=(Math.random()-.5)*seg*.7;
     let target=-Math.PI/2-(idx+.5)*seg+jit; while(target<catRot+TAU*4) target+=TAU;
-    const start=catRot, dist=target-start, dur=reduced()?500:3400, t0=performance.now();
+    let start=catRot, dist=target-start, dur=reduced()?500:3400, t0=performance.now();
     let last=-1;
+    boost=()=>{target+=TAU*2;start=catRot;dist=target-start;t0=performance.now();dur=reduced()?500:Math.max(2600,dur*.85);tick(1300,.05,.1);};
     $("#catMsg").textContent="العجلة تدور...";
     (function frame(now){
       const t=Math.min(1,(now-t0)/dur), e=1-Math.pow(1-t,4);
       catRot=start+dist*e;drawCatWheel(cv);
       const sgi=Math.floor(((-Math.PI/2-catRot)%TAU+TAU)%TAU/seg); if(sgi!==last){last=sgi;tick(1100,.025,.06);}
       if(t<1)return requestAnimationFrame(frame);
-      catRot%=TAU;catSpinning=false;const c=keys[idx];
+      catRot%=TAU;catSpinning=false;boost=null;$("#catSpin").disabled=true;cv.onclick=null;const c=keys[idx];
       $("#catMsg").innerHTML=`القسم: <b style="color:${CAT_COLORS[c]}">${CATS[c].name}</b>`;fanfare();
       setTimeout(()=>{if(current&&current.who===who)ask(c);},1100);
     })(t0);
@@ -930,7 +935,7 @@ presBtn.onclick=()=>{
       else if(!on&&document.fullscreenElement)document.exitFullscreen().catch(()=>{});}catch(e){}
 };
 document.addEventListener("fullscreenchange",()=>{if(!document.fullscreenElement&&document.body.classList.contains("present"))setPresent(false);});
-spinBtn.onclick=spin;
+spinBtn.onclick=spin;canvas.style.cursor="pointer";canvas.onclick=()=>{if(spinning||!spinBtn.disabled)spin();};
 bindReset();
 document.documentElement.dir="rtl";document.documentElement.lang="ar";
 window.addEventListener("resize",sizeCanvas);
