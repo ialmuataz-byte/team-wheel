@@ -695,10 +695,10 @@ function ask(c){
     });
   } else {
     stage.innerHTML=`${head(c)}<p class="qtext">${q.q}</p>
-      ${timerHTML(60)}
-      <p class="note">لك دقيقة تشرح فيها تصرفك. بعدها يقرر الفريق: أقنعتنا؟</p>
+      ${timerHTML(15)}
+      <p class="note">لك 15 ثانية تشرح فيها تصرفك. بعدها يقرر الفريق: أقنعتنا؟</p>
       <div class="actions" id="act"><button class="btn good" id="conv" type="button">أقنعنا (+1)</button>${nextBtn()}</div>`;
-    runTimer(60);
+    runTimer(15);
     $("#conv").onclick=()=>{clearInterval(timerId);const n=award();fanfare();$("#act").innerHTML=`<p class="verdict ok">+1 لـ ${n}</p>`+nextBtn();bindNext();};
     bindNext();
   }
